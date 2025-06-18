@@ -1,0 +1,16 @@
+name: Schedule Task - Prune Images
+
+on:
+  schedule:
+    # Runs at 1:22 PM / 13:22 in the UTC timezone which will run at 3:22 AM PST
+    # or 4:22 AM PDT (Daylight Savings). The GitHub Actions documentation
+    # recommends against running scheduled jobs at the top of the hour as they
+    # may be delayed or cancelled due to high loads from other customers'
+    # scheduled jobs.
+    - cron: "22 13 * * *"
+
+jobs:
+  ecr:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
