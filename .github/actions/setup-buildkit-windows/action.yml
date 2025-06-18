@@ -1,0 +1,258 @@
+name: Setup BuildKit on Windows
+
+description: |
+  Installs and configures BuildKit & its dependencies for Windows.
+
+inputs:
+  buildkit-version:
+    description: The version of buildkit to install.
+    required: true
+  buildx-version:
+    description: The version of buildx to install.
+    required: true
+  containerd-version:
+    description: The version of containerd to install.
+    required: true
+  docker-version:
+    description: The version of Docker to install.
+    required: true
+
+outputs:
+  vhdx-path:
+    description: The path to the VHDX image file.
+    value: ${{ steps.cache-config.outputs.path }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Check Runner
+      shell: bash
+      run: |
+        if [[ "${RUNNER_OS}" != "Windows" ]]; then
+          echo "The setup-buildkit-windows action is only supported on Windows runners"
+          exit 1
+        fi
+
+    - name: Determine Architecture
+      id: get-arch
+      shell: bash
+      run: |
+        arch="$(uname -m)"
+        echo "name=${arch}" >> "$GITHUB_OUTPUT"
+
+    - name: Set cache outputs
+      id: cache-config
+      shell: bash
+      run: |
+        base_key="buildkit-cache"
+        hash="${{ hashFiles('.github/actions/setup-buildkit-windows/action.yml') }}"
+        name="${base_key}-${hash}"
+        vhdx_path="${base_key}.vhdx"
+
+        echo "name=${name}" >> "$GITHUB_OUTPUT"
+        echo "path=${vhdx_path}" >> "$GITHUB_OUTPUT"
+
+    - name: Cache VHDX Image
+      id: cache
+      uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684
+      with:
+        path: ${{ steps.cache-config.outputs.path }}
+        key: ${{ steps.cache-config.outputs.name }}
+
+    - name: Setup VHDX for caching
+      id: vhdx
+      uses: ./.github/actions/setup-vhdx
+      with:
+        name: ${{ steps.cache-config.outputs.path }}
+        size: 500MB
+        skip-create: ${{ steps.cache.outputs.cache-hit == 'true' }}
+
+    - name: Output containerd values
+      id: containerd
+      shell: pwsh
+      run: |
+        $drive = "${{ steps.vhdx.outputs.drive-letter }}"
+        $containerdPath = "${drive}:\containerd"
+        $binPath = "${containerdPath}\bin"
+
+        "path=${containerdPath}" >> $env:GITHUB_OUTPUT
+        "bin-path=${binPath}" >> $env:GITHUB_OUTPUT
+
+    # NOTE: use version 1.7.27 or newer
+    - name: Download & Install containerd
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: pwsh
+      run: |
+        $start = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+        $containerdPath = "${{ steps.containerd.outputs.path }}"
+        $version = "${{ inputs.containerd-version }}"
+        $arch = "amd64"
+        $file = "containerd-${version}-windows-${arch}.tar.gz"
+        $repo = "https://github.com/containerd/containerd"
+        $url = "${repo}/releases/download/v${version}/${file}"
+
+        echo "Downloading ${url}"
+        curl.exe -LO "${url}"
+
+        mkdir $containerdPath
+        tar.exe -xvC $containerdPath -f $file
+        $end = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+        $duration = ($end - $start)
+        echo "Download completed in ${duration} ms"
+
+    - name: Add containerd to PATH
+      shell: pwsh
+      run: |
+        $binPath = "${{ steps.containerd.outputs.bin-path }}"
+        "$binPath" >> $env:GITHUB_PATH
+
+    - name: Configure containerd
+      shell: pwsh
+      run: |
+        $start = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+        $containerdPath = "${{ steps.containerd.outputs.path }}"
+        $configPath = "${containerdPath}\config.toml"
+        containerd.exe config default | Out-File $configPath -Encoding ascii
+        Get-Content $configPath
+        $end = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+        $duration = ($end - $start)
+        echo "Configure containerd completed in ${duration} ms"
+
+    - name: Register containerd Service
+      shell: pwsh
+      run: |
+        $start = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+        containerd.exe --register-service
+        $end = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+        $duration = ($end - $start)
+        echo "Register containerd Service completed in ${duration} ms"
+
+    - name: Start containerd Service
+      shell: pwsh
+      run: |
+        $start = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+        Start-Service containerd
+        $end = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+        $duration = ($end - $start)
+        echo "Start containerd Service completed in ${duration} ms"
+
+    - name: Output Buildkit values
+      id: buildkit
+      shell: pwsh
+      run: |
+        $drive = "${{ steps.vhdx.outputs.drive-letter }}"
+        $buildkitPath = "${drive}:\buildkit"
+        $binPath = "${buildkitPath}\bin"
+
+        "path=${buildkitPath}" >> $env:GITHUB_OUTPUT
+        "bin-path=${binPath}" >> $env:GITHUB_OUTPUT
+
+    - name: Download & Install Buildkit
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: pwsh
+      run: |
+        $start = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+        $buildkitPath = "${{ steps.buildkit.outputs.path }}"
+        $version = "${{ inputs.buildkit-version }}"
+        $arch = "amd64"
+        $file = "buildkit-v${version}.windows-${arch}.tar.gz"
+        $repo = "https://github.com/moby/buildkit"
+        $url = "${repo}/releases/download/v${version}/${file}"
+
+        echo "Downloading ${url}"
+        curl.exe -LO "${url}"
+        mkdir $buildkitPath
+        tar.exe -xvC $buildkitPath -f $file
+        $end = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+        $duration = ($end - $start)
+        echo "Download & Install Buildkit completed in ${duration} ms"
+
+    - name: Add Buildkit to PATH
+      shell: pwsh
+      run: |
+        $binPath = "${{ steps.buildkit.outputs.bin-path }}"
+        "$binPath" >> $env:GITHUB_PATH
+
+    - name: Register Buildkit Service
+      shell: pwsh
+      run: |
+        $start = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+        buildkitd.exe --register-service
+        $end = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+        $duration = ($end - $start)
+        echo "Register Buildkit Service completed in ${duration} ms"
+
+    - name: Start Buildkit Service
+      shell: pwsh
+      run: |
+        $start = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+        Start-Service buildkitd
+        $end = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+        $duration = ($end - $start)
+        echo "Start Buildkit Service completed in ${duration} ms"
+
+    - name: Before Setup Docker
+      id: before-docker
+      shell: pwsh
+      run: |
+        $ts = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+        "timestamp=${ts}" >> $env:GITHUB_OUTPUT
+
+    - name: Debug
+      shell: pwsh
+      run: |
+        ls C:\ProgramData\Docker
+        ls C:\ProgramData\Docker\windowsfilter
+
+    - name: Setup Docker
+      uses: docker/setup-docker-action@v4
+      with:
+        version: ${{ inputs.docker-version }}
+        daemon-config: |
+          {
+            "default-runtime": "io.containerd.runhcs.v1",
+            "features": {
+              "buildkit": true,
+              "containerd-snapshotter": true
+            }
+          }
+
+    - name: After Setup Docker
+      shell: pwsh
+      run: |
+        $start = ${{ steps.before-docker.outputs.timestamp }}
+        $end = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+        $duration = ($end - $start)
+        echo "Setup Docker completed in ${duration} ms"
+
+    - name: Setup Buildx
+      shell: pwsh
+      run: |
+        $start = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+        $pluginsPath = "${env:ProgramData}\Docker\cli-plugins"
+        $version = "${{ inputs.buildx-version }}"
+        $arch = "amd64"
+        $file = "buildx-v${version}.windows-${arch}.exe"
+        $repo = "https://github.com/docker/buildx"
+        $url = "${repo}/releases/download/v${version}/${file}"
+
+        curl.exe -LO "${url}"
+        mv $file ${pluginsPath}\docker-buildx.exe
+
+        $end = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+        $duration = ($end - $start)
+        echo "Setup Buildx completed in ${duration} ms"
+
+    - name: Create Buildx builder
+      shell: pwsh
+      run: |
+        $start = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+
+        docker buildx create `
+          --name buildkit-exp `
+          --use `
+          --driver=remote npipe:////./pipe/buildkitd
+
+        $end = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+        $duration = ($end - $start)
+        echo "Create Buildx builder completed in ${duration} ms"

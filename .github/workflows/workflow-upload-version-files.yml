@@ -1,0 +1,89 @@
+#################################################################################
+# A reusable workflow to create version files and upload them as artifacts. This
+# enables the release workflow to determine the version information for a given
+# workflow.
+#################################################################################
+
+name: Workflow - Upload Version Files
+
+on:
+  workflow_call:
+    inputs:
+      build-number:
+        description: The build number to use for the version files.
+        type: string
+        required: true
+      core-version:
+        description: The core version of the collector.
+        type: string
+        required: true
+      git-ref:
+        description: The git reference used to build the collector.
+        type: string
+        required: true
+      sumo-version:
+        description: The Sumo Logic version of the collector.
+        type: string
+        required: true
+      version:
+        description: The version of the collector.
+        type: string
+        required: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  upload:
+    name: Version Files
+    runs-on: ubuntu-24.04
+    env:
+      BUILD_NUMBER: ${{ inputs.build-number }}
+      CORE_VERSION: ${{ inputs.core-version }}
+      GIT_REF: ${{ inputs.git-ref }}
+      SUMO_VERSION: ${{ inputs.sumo-version }}
+      VERSION: ${{ inputs.version }}
+    steps:
+      - name: Create version files
+        run: |
+          echo "${BUILD_NUMBER}" > build-number.txt
+          echo "${CORE_VERSION}" > otc-core-version.txt
+          echo "${GIT_REF}" > otc-git-reference.txt
+          echo "${SUMO_VERSION}" > otc-sumo-version.txt
+          echo "${VERSION}" > otc-version.txt
+
+      - name: Store build-number.txt as action artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: build-number.txt
+          path: ./build-number.txt
+          if-no-files-found: error
+
+      - name: Store otc-core-version.txt as action artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: otc-core-version.txt
+          path: ./otc-core-version.txt
+          if-no-files-found: error
+
+      - name: Store otc-git-reference.txt as action artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: otc-git-reference.txt
+          path: ./otc-git-reference.txt
+          if-no-files-found: error
+
+      - name: Store otc-sumo-version.txt as action artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: otc-sumo-version.txt
+          path: ./otc-sumo-version.txt
+          if-no-files-found: error
+
+      - name: Store otc-version.txt as action artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: otc-version.txt
+          path: ./otc-version.txt
+          if-no-files-found: error

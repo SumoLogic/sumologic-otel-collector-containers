@@ -1,0 +1,121 @@
+#################################################################################
+# A reusable workflow to promote images & indexes from one channel to another
+# for a given workflow run.
+#################################################################################
+
+name: Workflow - Promote
+
+on:
+  workflow_call:
+    inputs:
+      build-number:
+        description: |
+          The Run ID of the workflow that built the container images.
+        required: true
+        type: string
+      destination-channel:
+        description: |
+          The destination channel to promote images to. Valid values are:
+          - rc
+          - stable
+        type: string
+      git-sha:
+        description: The Git SHA used to build the container images.
+        required: true
+        type: string
+      otc-core-version:
+        description: The core version of the collector.
+        required: true
+        type: string
+      otc-git-ref:
+        description: The Git ref used to build the collector.
+        required: true
+        type: string
+      otc-sumo-version:
+        description: The sumo version of the collector.
+        required: true
+        type: string
+      otc-version:
+        description: The version of the collector.
+        required: true
+        type: string
+      source-channel:
+        description: |
+          The source channel to promote images from. Valid values are:
+          - ci
+          - rc
+        type: string
+      workflow-id:
+        description: |
+          Workflow Run ID from this repository to fetch artifacts from for this
+          release.
+        required: true
+        type: string
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  promote:
+    name: Promote
+    runs-on: ubuntu-24.04
+    env:
+      MAKEFLAGS: --no-print-directory
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Add GOPATH bin to PATH
+        run: echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Login to ECR (Private)
+        uses: docker/login-action@v3
+        with:
+          registry: 663229565520.dkr.ecr.us-east-1.amazonaws.com
+          username: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          password: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Login to ECR (Public)
+        if: ${{ inputs.destination-channel == 'stable' }}
+        uses: docker/login-action@v3
+        with:
+          registry: public.ecr.aws
+          username: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          password: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKERHUB_LOGIN }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Promote images
+        env:
+          SRC: ${{ inputs.source-channel }}
+          DST: ${{ inputs.destination-channel }}
+          WORKFLOW_ID: ${{ inputs.workflow-id }}
+        run: |
+          target="promote-images-${SRC}-to-${DST}"
+
+          echo "Source channel: ${SRC}"
+          echo "Destination channel: ${DST}"
+          echo "Workflow Run ID: ${WORKFLOW_ID}"
+
+          make "${target}" RUN_ID="${WORKFLOW_ID}"
+
+      - name: Tag images
+        env:
+          CHANNEL: ${{ inputs.destination-channel }}
+          WORKFLOW_ID: ${{ inputs.workflow-id }}
+        run: |
+          target="create-tags-${CHANNEL}"
+
+          echo "Channel: ${CHANNEL}"
+          echo "Workflow Run ID: ${WORKFLOW_ID}"
+
+          make "${target}" \
+          RUN_ID="${WORKFLOW_ID}" \
+          GITHUB_SHA="${{ inputs.git-sha }}" \
+          OTC_GIT_REF="${{ inputs.otc-git-ref }}" \
+          OTC_VERSION="${{ inputs.otc-version }}"

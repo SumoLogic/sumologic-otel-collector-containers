@@ -1,0 +1,27 @@
+name: Build & Push (Pull Requests)
+
+on:
+  pull_request:
+    branches:
+      - "**"
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  determine-build-info:
+    name: Build Info
+    uses: ./.github/workflows/workflow-determine-build-info.yml
+
+  build-images:
+    name: Container Images
+    uses: ./.github/workflows/workflow-build-container-images.yml
+    needs:
+      - determine-build-info
+    with:
+      build-number: ${{ needs.determine-build-info.outputs.build-number }}
+      git-ref: ${{ needs.determine-build-info.outputs.git-ref }}
+      pull-request: true
+      version: ${{ needs.determine-build-info.outputs.version }}
+      workflow-id: ${{ needs.determine-build-info.outputs.workflow-id }}

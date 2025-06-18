@@ -1,0 +1,75 @@
+#################################################################################
+# A reusable workflow to push container images to various image registries such
+# as Amazon ECR & Docker Hub.
+#################################################################################
+
+name: Workflow - Push Container Indexes
+
+on:
+  workflow_call:
+    inputs:
+      git-ref:
+        description: |
+          The git reference used to build the collector. This is used to tag the
+          container images with the git commit SHA.
+        type: string
+        required: true
+      version:
+        description: |
+          The version of the collector to use for tagging the container images.
+          This is used to tag the container images with the version of the
+          collector.
+        type: string
+        required: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  push:
+    name: Push - ${{ matrix.target }}
+    uses: ./.github/workflows/workflow-push-container-index.yml
+    strategy:
+      matrix:
+        include:
+          - target: standard
+            tags: >
+              [
+              "${{ github.run_id }}",
+              "latest",
+              "${{ github.sha }}",
+              "${{ inputs.git-ref }}",
+              "${{ inputs.version }}"
+              ]
+          - target: standard-fips
+            tags: >
+              [
+              "${{ github.run_id }}-fips",
+              "latest-fips",
+              "${{ github.sha }}-fips",
+              "${{ inputs.git-ref }}-fips",
+              "${{ inputs.version }}-fips"
+              ]
+          - target: ubi
+            tags: >
+              [
+              "${{ github.run_id }}-ubi",
+              "latest-ubi",
+              "${{ github.sha }}-ubi",
+              "${{ inputs.git-ref }}-ubi",
+              "${{ inputs.version }}-ubi"
+              ]
+          - target: ubi-fips
+            tags: >
+              [
+              "${{ github.run_id }}-ubi-fips",
+              "latest-ubi-fips",
+              "${{ github.sha }}-ubi-fips",
+              "${{ inputs.git-ref }}-ubi-fips",
+              "${{ inputs.version }}-ubi-fips"
+              ]
+    with:
+      tags: ${{ matrix.tags }}
+      target: ${{ matrix.target }}
+    secrets: inherit

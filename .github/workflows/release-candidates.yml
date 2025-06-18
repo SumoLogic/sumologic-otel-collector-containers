@@ -1,0 +1,42 @@
+name: Publish release candidate
+
+run-name: >
+  ${{ format('Publish RC for Workflow: {0}', inputs.workflow-id) }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      workflow-id:
+        description: |
+          Workflow Run ID from this repository to fetch artifacts from for this
+          promotion.
+        required: true
+        type: string
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  determine-run-info:
+    name: Run Info
+    uses: ./.github/workflows/workflow-determine-run-info.yml
+    with:
+      workflow-id: ${{ inputs.workflow-id }}
+
+  promote-container-images:
+    name: Container images
+    uses: ./.github/workflows/workflow-promote.yml
+    needs:
+      - determine-run-info
+    with:
+      build-number: ${{ needs.determine-run-info.outputs.build-number }}
+      destination-channel: rc
+      git-sha: ${{ needs.determine-run-info.outputs.git-sha }}
+      otc-core-version: ${{ needs.determine-run-info.outputs.otc-core-version }}
+      otc-git-ref: ${{ needs.determine-run-info.outputs.otc-git-ref }}
+      otc-sumo-version: ${{ needs.determine-run-info.outputs.otc-sumo-version }}
+      otc-version: ${{ needs.determine-run-info.outputs.otc-version }}
+      source-channel: ci
+      workflow-id: ${{ inputs.workflow-id }}
+    secrets: inherit

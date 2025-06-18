@@ -1,0 +1,80 @@
+#################################################################################
+# A reusable workflow to push a container index to various registries such as
+# Amazon ECR & Docker Hub.
+#################################################################################
+
+name: Workflow - Push Container Index
+
+on:
+  workflow_call:
+    inputs:
+      target:
+        description: |
+          The name of the bake target to create tags for.
+        type: string
+        required: true
+      tags:
+        description: |
+          A list of tags (in JSON format) to create for the source images.
+        type: string
+        required: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  push:
+    name: Push - ${{ inputs.target }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3.6.0
+
+      - name: Set up Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3.10.0
+
+      - name: Show Buildx platforms
+        run: echo ${{ steps.buildx.outputs.platforms }}
+
+      - name: Login to ECR
+        uses: docker/login-action@v3
+        with:
+          registry: 663229565520.dkr.ecr.us-east-1.amazonaws.com
+          username: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          password: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: "manifest_${{ inputs.target }}_*"
+          path: manifests
+          merge-multiple: true
+
+      - name: Determine source images (ECR)
+        run: |
+          ls -l manifests/
+          cat manifests/*-ecr.json
+          jq -jf jq/ci/manifest-sources.jq --arg target ${{ inputs.target }} \
+          manifests/*-ecr.json | tee sources-ecr.txt
+
+      - name: Determine tags (ECR)
+        env:
+          REPO_BASE: 663229565520.dkr.ecr.us-east-1.amazonaws.com
+          REPO_ORG: sumologic
+          REPO_NAME: sumologic-otel-collector-ci-builds
+        run: |
+          REPO="${REPO_BASE}/${REPO_ORG}/${REPO_NAME}"
+          echo '${{ inputs.tags }}' | jq -rf jq/ci/tags.jq --arg url "$REPO" > ecr-tags.txt
+          cat ecr-tags.txt
+
+      - name: Create multiplatform image index (ECR)
+        run: |
+          readarray -t source_args < sources-ecr.txt
+          while IFS= read -r tag; do
+            echo "Creating & pushing tag: ${tag}"
+            docker manifest create "${tag}" "${source_args[@]}"
+            docker manifest push "${tag}"
+          done < ecr-tags.txt

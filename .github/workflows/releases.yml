@@ -1,0 +1,90 @@
+name: Publish release
+
+run-name: >
+  ${{ format('Publish Release for Workflow: {0}', inputs.workflow-id) }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      workflow-id:
+        description: |
+          Workflow Run ID from this repository to fetch artifacts from for this
+          release.
+        required: true
+        type: string
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  determine-run-info:
+    name: Run Info
+    uses: ./.github/workflows/workflow-determine-run-info.yml
+    with:
+      workflow-id: ${{ inputs.workflow-id }}
+
+  promote-container-images:
+    name: Container images
+    uses: ./.github/workflows/workflow-promote.yml
+    needs:
+      - determine-run-info
+    with:
+      build-number: ${{ needs.determine-run-info.outputs.build-number }}
+      destination-channel: stable
+      git-sha: ${{ needs.determine-run-info.outputs.git-sha }}
+      otc-core-version: ${{ needs.determine-run-info.outputs.otc-core-version }}
+      otc-git-ref: ${{ needs.determine-run-info.outputs.otc-git-ref }}
+      otc-sumo-version: ${{ needs.determine-run-info.outputs.otc-sumo-version }}
+      otc-version: ${{ needs.determine-run-info.outputs.otc-version }}
+      source-channel: rc
+      workflow-id: ${{ inputs.workflow-id }}
+    secrets: inherit
+
+  create-release:
+    name: Create Github release
+    runs-on: ubuntu-24.04
+    needs:
+      - determine-run-info
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts from workflow
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          path: artifacts/
+          merge-multiple: true
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.workflow-id }}
+
+      - name: List all artifacts
+        run: ls -l artifacts/
+
+      - uses: ncipollo/release-action@v1
+        with:
+          name: v${{ needs.determine-run-info.outputs.otc-version }}
+          commit: ${{ needs.determine-run-info.outputs.git-sha }}
+          tag: v${{ needs.determine-run-info.outputs.otc-version }}
+
+          draft: true
+          generateReleaseNotes: true
+          prerelease: false
+
+          allowUpdates: true
+          omitBodyDuringUpdate: true
+          omitNameDuringUpdate: true
+
+          artifacts: "artifacts/*"
+          artifactErrorsFailBuild: true
+          replacesArtifacts: false
+
+          body: |
+            This release produces container images using Sumo Logic Distributions for OpenTelemetry Collector [${{ needs.determine-run-info.outputs.otc-version }}](https://github.com/SumoLogic/sumologic-otel-collector/releases/tag/v${{ needs.determine-run-info.outputs.otc-version }}).
+
+            The changelog below is for the container images themselves, rather than the Sumo Logic Distribution for OpenTelemetry Collector. The changelog for the Sumo Logic Distribution for OpenTelemetry Collector can be found on the collector's [release page](https://github.com/SumoLogic/sumologic-otel-collector/releases/tag/v${{ needs.determine-run-info.outputs.otc-version }}).
+
+            ### Container images:
+
+            ```
+            docker pull public.ecr.aws/sumologic/sumologic-otel-collector:${{ needs.determine-run-info.outputs.otc-version }}
+            ```

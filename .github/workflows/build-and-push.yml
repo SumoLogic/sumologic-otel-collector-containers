@@ -1,0 +1,71 @@
+# We use a single workflow to build all containers because github.run_number is
+# specific to each workflow. This ensures that each image has an
+# OTC_BUILD_NUMBER that is greater than previous runs which allows unique image
+# tags to be created for each build.
+name: Build & Push
+
+# Sets the name of the CI run based on whether the run was triggered with or
+# without a workflow_id set.
+run-name: >
+  ${{
+  inputs.workflow-id == '' && 'Build for Remote Workflow: latest-main'
+  ||
+  inputs.workflow-id != '' && format('Build for Remote Workflow: {0}', inputs.workflow-id)
+  }}
+
+on:
+  push:
+    branches:
+      - "main"
+  workflow_dispatch:
+    inputs:
+      workflow-id:
+        description: |
+          Workflow Run ID from the SumoLogic/sumologic-otel-collector repository
+          to download artifacts from. The artifacts for the specified workflow
+          must contain an otelcol-sumo binary for each platform that container
+          images are being built for.
+        required: false
+        type: string
+
+jobs:
+  determine-build-info:
+    name: Build Info
+    uses: ./.github/workflows/workflow-determine-build-info.yml
+    with:
+      workflow-id: ${{ inputs.workflow-id }}
+
+  build-images:
+    name: Container Images
+    uses: ./.github/workflows/workflow-build-container-images.yml
+    needs:
+      - determine-build-info
+    with:
+      build-number: ${{ needs.determine-build-info.outputs.build-number }}
+      git-ref: ${{ needs.determine-build-info.outputs.git-ref }}
+      version: ${{ needs.determine-build-info.outputs.version }}
+      workflow-id: ${{ needs.determine-build-info.outputs.workflow-id }}
+    secrets: inherit
+
+  push-indexes:
+    name: Container Indexes
+    uses: ./.github/workflows/workflow-push-container-indexes.yml
+    needs:
+      - build-images
+      - determine-build-info
+    with:
+      git-ref: ${{ needs.determine-build-info.outputs.git-ref }}
+      version: ${{ needs.determine-build-info.outputs.version }}
+    secrets: inherit
+
+  version-files:
+    name: Version Files
+    uses: ./.github/workflows/workflow-upload-version-files.yml
+    needs:
+      - determine-build-info
+    with:
+      build-number: ${{ needs.determine-build-info.outputs.build-number }}
+      core-version: ${{ needs.determine-build-info.outputs.core-version }}
+      git-ref: ${{ needs.determine-build-info.outputs.git-ref }}
+      sumo-version: ${{ needs.determine-build-info.outputs.sumo-version }}
+      version: ${{ needs.determine-build-info.outputs.version }}

@@ -1,0 +1,33 @@
+name: Lint
+
+permissions: {}
+
+on:
+  pull_request:
+    branches:
+      - "**"
+
+jobs:
+  actionlint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Add GOPATH bin to PATH
+        run: echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Install actionlint
+        run: make install-actionlint
+
+      - name: Run actionlint
+        run: make actionlint
+
+  shellcheck:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run shellcheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          severity: info

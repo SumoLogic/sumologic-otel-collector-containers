@@ -1,0 +1,115 @@
+#################################################################################
+# A reusable workflow to determine the build information from a given run. This
+# information can be used to promote images & create releases.
+#################################################################################
+
+name: Workflow - Determine Run Info
+
+on:
+  workflow_call:
+    inputs:
+      workflow-id:
+        description: |
+          Workflow Run ID from this repository to fetch artifacts from for this
+          release.
+        required: true
+        type: string
+    outputs:
+      build-number:
+        description: The Run ID of the workflow that built the container images.
+        value: ${{ jobs.determine.outputs.build-number }}
+      git-sha:
+        description: The Git SHA used to build the container images.
+        value: ${{ jobs.determine.outputs.git-sha }}
+      otc-core-version:
+        description: The core version of the collector.
+        value: ${{ jobs.determine.outputs.otc-core-version }}
+      otc-git-ref:
+        description: The Git ref used to build the collector.
+        value: ${{ jobs.determine.outputs.otc-git-ref }}
+      otc-sumo-version:
+        description: The sumo version of the collector.
+        value: ${{ jobs.determine.outputs.otc-sumo-version }}
+      otc-version:
+        description: The version of the collector.
+        value: ${{ jobs.determine.outputs.otc-version }}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  determine:
+    name: Determine
+    runs-on: ubuntu-24.04
+    outputs:
+      build-number: ${{ steps.set-versions.outputs.build-number }}
+      git-sha: ${{ steps.get-sha.outputs.git-sha }}
+      otc-core-version: ${{ steps.set-versions.outputs.otc-core-version }}
+      otc-git-ref: ${{ steps.set-versions.outputs.otc-git-ref }}
+      otc-sumo-version: ${{ steps.set-versions.outputs.otc-sumo-version }}
+      otc-version: ${{ steps.set-versions.outputs.otc-version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Output Workflow ID
+        run: echo ::notice title=Workflow ID::${{ inputs.workflow-id }}
+
+      - name: Output Workflow URL
+        run: |
+          repo_url="https://github.com/SumoLogic/sumologic-otel-collector-packaging"
+          url="${repo_url}/actions/runs/${{ inputs.workflow-id }}"
+          echo ::notice title=Workflow URL::${url}
+
+      - name: Download version artifacts from workflow
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: "*.txt"
+          path: artifacts/
+          merge-multiple: true
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.workflow-id }}
+
+      - name: Set version outputs
+        id: set-versions
+        run: |
+          build_number="$(cat artifacts/build-number.txt)"
+          otc_core_version="$(cat artifacts/otc-core-version.txt)"
+          otc_git_ref="$(cat artifacts/otc-git-reference.txt)"
+          otc_sumo_version="$(cat artifacts/otc-sumo-version.txt)"
+          otc_version="$(cat artifacts/otc-version.txt)"
+
+          {
+            echo build-number="${build_number}"
+            echo otc-core-version="${otc_core_version}"
+            echo otc-git-ref="${otc_git_ref}"
+            echo otc-sumo-version="${otc_sumo_version}"
+            echo otc-version="${otc_version}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Output notices
+        run: |
+          build_number="${{ steps.set-versions.outputs.build-number }}"
+          otc_core_version=${{ steps.set-versions.outputs.otc-core-version }}
+          otc_git_ref="${{ steps.set-versions.outputs.otc-git-ref }}"
+          otc_sumo_version=${{ steps.set-versions.outputs.otc-sumo-version }}
+          otc_version="${{ steps.set-versions.outputs.otc-version }}"
+
+          echo ::notice title=OTC Version::${otc_version}
+          echo ::notice title=OTC Sumo Version::${otc_sumo_version}
+          echo ::notice title=OTC Core Version::${otc_core_version}
+          echo ::notice title=OTC Git Reference::${otc_git_ref}
+          echo ::notice title=Build Number::${build_number}
+
+      - name: Determine Git SHA of workflow
+        id: get-sha
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          workflow=${{ inputs.workflow-id }}
+          sha="$(gh run view ${workflow} --json headSha -t '{{.headSha}}')"
+          echo "git-sha=$sha" >> "$GITHUB_OUTPUT"
+
+      - name: Output Git SHA
+        run: |
+          echo ::notice title=Git SHA::${{ steps.get-sha.outputs.git-sha }}

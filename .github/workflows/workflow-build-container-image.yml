@@ -1,0 +1,267 @@
+#################################################################################
+# A reusable workflow to build a single container image for a single platform.
+#################################################################################
+
+name: Workflow - Build Container Image
+
+on:
+  workflow_call:
+    inputs:
+      arch:
+        description: The CPU architecture to build for.
+        type: string
+        required: true
+      build-number:
+        description: The build number of the container image.
+        type: string
+        required: true
+      fips:
+        description: Build container image using FIPS binary.
+        default: false
+        type: boolean
+      git-ref:
+        description: The Git ref used to build the collector.
+        type: string
+        required: true
+      os:
+        description: The operating system to build for.
+        type: string
+        required: true
+      os-version:
+        description: The operating system version to build for.
+        type: string
+      product:
+        description: |
+          The product name to build. This allows different bake targets to end
+          up in the same multi-platform image.
+        type: string
+        required: true
+      pull-request:
+        description: |
+          Whether the build is for a pull request.
+        type: boolean
+        default: false
+      target:
+        description: |
+          The bake target to build. The product name will be used as the target
+          when target is not set.
+        type: string
+      runs-on:
+        default: ubuntu-24.04
+        type: string
+      version:
+        description: |
+          The version of the collector binary.
+        type: string
+        required: true
+      workflow-id:
+        description: |
+          The ID of the GitHub Actions workflow in sumologic-otel-collector to
+          fetch artifacts from.
+        type: string
+        required: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: >
+      ${{ inputs.fips == true && 'Build FIPS' || 'Build' }} -
+      ${{
+      inputs.os != 'windows' && format('{0}/{1}', inputs.os, inputs.arch)
+      ||
+      format('{0}/{1}', inputs.target, inputs.arch)
+      }}
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Workflow URL for sumologic-otel-collector
+        run: |
+          org="SumoLogic"
+          repo="sumologic-otel-collector"
+          workflow_id="${{ inputs.workflow-id }}"
+          echo "https://github.com/${org}/${repo}/actions/runs/${workflow_id}"
+
+      - name: Set binary name
+        uses: ./.github/actions/determine-binary-name
+        id: binary-name
+        with:
+          fips: ${{ inputs.fips }}
+          name: otelcol-sumo
+          platform: ${{ inputs.os }}_${{ inputs.arch }}
+
+      - name: Output platform information
+        id: platform
+        run: |
+          os="${{ inputs.os }}"
+          os_version="${{ inputs.os-version }}"
+          arch="${{ inputs.arch }}"
+          binary_name="${{ steps.binary-name.outputs.name }}"
+          product="${{ inputs.product }}"
+          target="${{ inputs.target }}"
+
+          artifact_path="artifacts/${os}/${arch}/${binary_name}"
+
+          manifest="manifest_${product}_${os}_${arch}"
+          if [[ "${target}" != "" ]]; then
+            manifest+="_${target}"
+          fi
+
+          name_with_os_version="${os}"
+          if [[ "${os_version}" != "" ]]; then
+            name_with_os_version+="(${os_version})"
+          fi
+          name_with_os_version+="/${arch}"
+
+          {
+          echo "name=${os}"
+          echo "name-with-os-version=${name_with_os_version}"
+          echo "artifact-path=${artifact_path}"
+          echo "manifest-name=${manifest}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Download otelcol-sumo artifact from workflow
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: ${{ steps.binary-name.outputs.name-with-platform }}
+          path: ${{ steps.platform.outputs.artifact-path }}
+          repository: sumologic/sumologic-otel-collector
+          run-id: ${{ inputs.workflow-id }}
+          github-token: ${{ github.token }}
+
+      - name: Set image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          annotations: |
+            manifest:org.opencontainers.image.description=sumologic-otel-collector
+            manifest:org.opencontainers.image.title=sumologic-otel-collector
+          labels: |
+            build-number=${{ inputs.build-number }}
+            gha-workflow=${{ inputs.workflow-id }}
+            git-ref=${{ inputs.git-ref }}
+            org.opencontainers.image.description=sumologic-otel-collector
+            org.opencontainers.image.title=sumologic-otel-collector
+            org.opencontainers.image.version=${{ inputs.version }}
+          tags: |
+            # NOTE: Any tags below will not be created. Tag creation happens in
+            # workflow-push-container-index.yml. A version tag is specified
+            # below to allow the opencontainers image version annotation to be
+            # set.
+            type=semver,pattern={{version}},value=${{ inputs.version }}
+
+      # NOTE: We need to use the netapi32.dll from the servercore image to
+      # allow Go programs to work correctly in our ltsc2022 nanoserver image.
+      - name: Grab netapi32.dll from servercore image
+        if: inputs.target == 'windows-ltsc2022'
+        shell: pwsh
+        run: |
+          docker create --name temp-container mcr.microsoft.com/windows/servercore:ltsc2022
+          docker cp temp-container:C:\Windows\System32\netapi32.dll .
+
+      - name: Setup BuildKit (Windows)
+        id: buildkit
+        if: runner.os == 'Windows'
+        uses: ./.github/actions/setup-buildkit-windows
+        with:
+          buildkit-version: "0.23.2"
+          buildx-version: "0.26.1"
+          containerd-version: "2.1.3"
+          docker-version: "28.3.2"
+
+      - name: Set up QEMU
+        if: runner.os != 'Windows'
+        uses: docker/setup-qemu-action@v3.6.0
+
+      - name: Set up Buildx
+        if: runner.os != 'Windows'
+        id: buildx
+        uses: docker/setup-buildx-action@v3.10.0
+
+      - name: Show Buildx platforms
+        if: runner.os != 'Windows'
+        run: echo ${{ steps.buildx.outputs.platforms }}
+
+      - name: Login to ECR
+        uses: docker/login-action@v3
+        with:
+          registry: 663229565520.dkr.ecr.us-east-1.amazonaws.com
+          username: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          password: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Build (Local)
+        if: inputs.pull-request == 'true'
+        id: build-local
+        uses: docker/bake-action@v6
+        with:
+          source: .
+          targets: ${{ inputs.target || inputs.product }}
+          provenance: false
+          files: |
+            ./docker-bake.hcl
+            ./docker-bake.ci-override.hcl
+            cwd://${{ steps.meta.outputs.bake-file }}
+          set: |
+            *.platform=${{ steps.platform.outputs.name-with-os-version }}
+            *.tags=
+
+      - name: Build and push (ECR)
+        if: inputs.pull-request != 'true'
+        id: build-ecr
+        uses: docker/bake-action@v6
+        with:
+          source: .
+          targets: ${{ inputs.target || inputs.product }}
+          provenance: false
+          files: |
+            ./docker-bake.hcl
+            ./docker-bake.ecr-override.hcl
+            ./docker-bake.ci-override.hcl
+            cwd://${{ steps.meta.outputs.bake-file }}
+          set: |
+            *.platform=${{ steps.platform.outputs.name-with-os-version }}
+            *.tags=
+
+      - name: Print & fix metadata
+        id: fix-metadata
+        if: steps.build-ecr.conclusion == 'success'
+        run: |
+          echo "-- Current metadata (ECR)"
+          echo '${{ steps.build-ecr.outputs.metadata }}' | tee metadata-ecr.json
+
+          # NOTE: This does not seem to be necessary at the moment. I believe
+          # this is necessary when caching to a registry.
+          # echo "-- Fixed metadata (ECR)"
+          # jq -jf jq/ci/fix-metadata.jq metadata-ecr.json | tee metadata-ecr.json
+
+          # if [ "$(cat metadata-ecr.json)" == "{}" ]; then
+          #   echo "Fixing metadata failed"; exit 1
+          # fi
+
+      - name: Set container image manifest output
+        if: steps.fix-metadata.conclusion == 'success'
+        id: manifest
+        run: |
+          name="${{ steps.platform.outputs.manifest-name }}"
+          target="${{ inputs.target || inputs.product }}"
+          jq -c ".[\"$target\"]" metadata-ecr.json | tee "${name}-ecr.json"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: steps.manifest.conclusion == 'success'
+        with:
+          name: ${{ steps.platform.outputs.manifest-name }}-ecr
+          path: ${{ steps.platform.outputs.manifest-name }}-ecr.json
+          if-no-files-found: error
+
+      # NOTE: There doesn't appear to be a simple way to run post hooks in
+      # composite actions. We must unmount the VHDX image after we're done using
+      # it but before the post-cache hook runs. We should be able to fix this by
+      # converting our setup-vhdx action to NodeJS.
+      - name: Unmount BuildKit Cache (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Dismount-VHD -Path ${{ steps.buildkit.outputs.vhdx-path }}
