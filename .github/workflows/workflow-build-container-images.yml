@@ -1,0 +1,114 @@
+name: Build container images
+
+on:
+  workflow_call:
+    inputs:
+      build-number:
+        description: |
+          The build number of the container image.
+        type: string
+        required: true
+      push:
+        description: |
+          Whether to push the images to a container registry or not.
+        type: boolean
+        default: false
+      version:
+        description: |
+          The version of the collector binary.
+        type: string
+        required: true
+      workflow-id:
+        description: |
+          The ID of the GitHub Actions workflow in sumologic-otel-collector to
+          fetch artifacts from.
+        type: string
+        required: true
+    secrets:
+      aws-access-key-id:
+        required: true
+      aws-secret-access-key:
+        required: true
+      dockerhub-login:
+        required: true
+      dockerhub-password:
+        required: true
+      gh-artifacts-token:
+        required: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    # Builds an image for each item in the matrix. Target is the bake target to
+    # run. Product is used to group together builds (e.g. ubi) from various bake
+    # targets.
+    name: Build
+    uses: ./.github/workflows/workflow-build-container-image.yml
+    with:
+      arch: ${{ matrix.arch }}
+      build-number: ${{ inputs.build-number }}
+      fips: ${{ matrix.fips == true }}
+      os: ${{ matrix.os }}
+      os-version: ${{ matrix.os-version }}
+      product: ${{ matrix.product }}
+      push: ${{ inputs.push }}
+      target: ${{ matrix.target }}
+      runs-on: ${{ matrix.runs-on || 'ubuntu-24.04' }}
+      version: ${{ inputs.version }}
+      workflow-id: ${{ inputs.workflow-id }}
+    secrets:
+      aws-access-key-id: ${{ secrets.aws-access-key-id }}
+      aws-secret-access-key: ${{ secrets.aws-secret-access-key }}
+      dockerhub-login: ${{ secrets.dockerhub-login }}
+      dockerhub-password: ${{ secrets.dockerhub-password }}
+      gh-artifacts-token: ${{ secrets.gh-artifacts-token }}
+    strategy:
+      matrix:
+        include:
+          # standard product
+          - product: standard
+            os: linux
+            arch: amd64
+          - product: standard
+            os: linux
+            arch: arm64
+          - product: standard
+            target: windows-ltsc2022
+            os: windows
+            os-version: 10.0.20348.3807
+            arch: amd64
+            runs-on: windows-2022
+          - product: standard
+            target: windows-ltsc2025
+            os: windows
+            os-version: 10.0.26100.4349
+            arch: amd64
+            runs-on: windows-2025
+          # standard-fips product
+          - product: standard-fips
+            fips: true
+            os: linux
+            arch: amd64
+          - product: standard-fips
+            fips: true
+            os: linux
+            arch: arm64
+          # ubi product
+          - product: ubi
+            os: linux
+            arch: amd64
+          - product: ubi
+            os: linux
+            arch: arm64
+          # ubi-fips product
+          - product: ubi-fips
+            fips: true
+            os: linux
+            arch: amd64
+          - product: ubi-fips
+            fips: true
+            os: linux
+            arch: arm64

@@ -1,0 +1,120 @@
+name: Determine build info
+
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        default: ubuntu-24.04
+        type: string
+      workflow-id:
+        description: |
+          The ID of the GitHub Actions workflow in sumologic-otel-collector to
+          fetch artifacts from.
+        type: string
+    outputs:
+      build-number:
+        description: |
+          A unique, auto-incrementing number taken from the GitHub run number.
+        value: ${{ jobs.determine.outputs.build-number }}
+      core-version:
+        description: |
+          The core version of the collector that is downloaded from the
+          detected/provided sumologic-otel-collector workflow.
+        value: ${{ jobs.determine.outputs.core-version }}
+      git-ref:
+        description: |
+          The git reference used to build the collector that is downloaded from
+          the detected/provided sumologic-otel-collector workflow.
+        value: ${{ jobs.determine.outputs.git-ref }}
+      sumo-version:
+        description: |
+          The sumo version of the collector that is downloaded from the
+          detected/provided sumologic-otel-collector workflow.
+        value: ${{ jobs.determine.outputs.sumo-version }}
+      version:
+        description: |
+          The version of the collector that is downloaded from the
+          detected/provided sumologic-otel-collector workflow.
+        value: ${{ jobs.determine.outputs.version }}
+      workflow-id:
+        description: |
+          The workflow ID that is detected/provided to fetch the collector from.
+        value: ${{ jobs.determine.outputs.workflow-id }}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  determine:
+    name: Determine
+    runs-on: ${{ inputs.runs-on }}
+    outputs:
+      build-number: ${{ steps.version.outputs.build_number }}
+      core-version: ${{ steps.version.outputs.core }}
+      git-ref: ${{ steps.version.outputs.git-ref }}
+      sumo-version: ${{ steps.version.outputs.sumo }}
+      version: ${{ steps.version.outputs.version }}
+      workflow-id: ${{ steps.workflow.outputs.id }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Determine the latest successful run of the "Dev builds" workflow for
+      # the "main" branch. This is skipped if inputs.workflow_id is set.
+      - name: Determine latest successful workflow run
+        id: latest-workflow
+        if: inputs.workflow-id == ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          R="SumoLogic/sumologic-otel-collector"
+          WFN="Dev builds"
+          W=$(gh run list -R "$R" -w "$WFN" -s success -b main --json databaseId -q '.[0].databaseId')
+          echo "id=$W" >> "$GITHUB_OUTPUT"
+
+      - name: Set output workflow
+        id: workflow
+        run: |
+          echo "id=${{ inputs.workflow-id || steps.latest-workflow.outputs.id }}" >> "$GITHUB_OUTPUT"
+
+      # Download the otelcol-sumo binary for linux/amd64 and use it to determine
+      # the version.
+      - uses: actions/download-artifact@v4
+        with:
+          name: otelcol-sumo-linux_amd64
+          repository: sumologic/sumologic-otel-collector
+          github-token: ${{ github.token }}
+
+      - name: Set version outputs
+        id: version
+        run: |
+          build_number="${{ github.run_number }}"
+
+          script="scripts/get-version-from-binary.sh"
+          binary="otelcol-sumo-linux_amd64"
+          core="$($script core $binary)"
+          git_ref="$($script gitref $binary)"
+          sumo="$($script sumo $binary)"
+
+          {
+          echo "build-number=${build_number}"
+          echo "core=${core}"
+          echo "git-ref=${git_ref}"
+          echo "sumo=${sumo}"
+          echo "version=${core}-sumo-${sumo}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Output notices
+        run: |
+          core_version="${{ steps.version.outputs.core }}"
+          git_ref="${{ steps.version.outputs.git-ref }}"
+          sumo_version="${{ steps.version.outputs.sumo }}"
+          workflow_url="https://github.com/SumoLogic/sumologic-otel-collector"
+          workflow_url="${workflow_url}/actions/runs"
+          workflow_url="${workflow_url}/${{ steps.workflow.outputs.id }}"
+
+          echo ::notice title=Remote Workflow URL::${workflow_url}
+          echo ::notice title=Collector Core Version::${core_version}
+          echo ::notice title=Collector Sumo Version::${sumo_version}
+          echo ::notice title=Collector Git Reference::${git_ref}

@@ -1,0 +1,29 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Vagrant
+.vagrant
+
+# Virtualbox
+*.log
+
+# Mac's .DS_Store
+.DS_Store
+
+.vscode/*
+!.vscode/extensions.json
+
+# temporary files
+/tmp
+
+# Windows Thumbs.db
+Thumbs.db
+
+# 1Password
+.op/
+
+artifacts/

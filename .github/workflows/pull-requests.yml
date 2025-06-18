@@ -1,0 +1,33 @@
+name: PR checks
+
+on:
+  pull_request:
+    branches:
+      - "**"
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  determine-build-info:
+    name: Build Info
+    uses: ./.github/workflows/workflow-determine-build-info.yml
+    with:
+      runs-on: ubuntu-24.04
+
+  build-images:
+    name: Container Images
+    uses: ./.github/workflows/workflow-build-container-images.yml
+    needs:
+      - determine-build-info
+    with:
+      build-number: ${{ needs.determine-build-info.outputs.build-number }}
+      version: ${{ needs.determine-build-info.outputs.version }}
+      workflow-id: ${{ needs.determine-build-info.outputs.workflow-id }}
+    secrets:
+      aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      dockerhub-login: ${{ secrets.DOCKERHUB_LOGIN }}
+      dockerhub-password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      gh-artifacts-token: ${{ secrets.GH_ARTIFACTS_TOKEN }}
