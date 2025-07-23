@@ -104,7 +104,7 @@ jobs:
   # Creates version files and uploads them as artifacts. This enables the
   # release workflow to determine the version information for a given workflow.
   version-files:
-    name: Create & upload version files
+    name: Version Files
     runs-on: ubuntu-24.04
     needs:
       - determine-build-info
