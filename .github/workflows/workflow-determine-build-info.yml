@@ -107,6 +107,9 @@ jobs:
           run-id: ${{ steps.workflow.outputs.id }}
           github-token: ${{ secrets.gh-artifacts-token }}
 
+      - name: Set otelcol-sumo execute bit
+        run: chmod +x otelcol-sumo-linux_amd64
+
       - name: Set version outputs
         id: version
         run: |
