@@ -85,6 +85,16 @@ readonly MAGENTA
 readonly CYAN
 readonly WHITE
 
+export NC
+export BLACK
+export RED
+export GREEN
+export YELLOW
+export BLUE
+export MAGENTA
+export CYAN
+export WHITE
+
 #################################################################################
 # Authentication variables
 #################################################################################
@@ -266,6 +276,7 @@ function prune_tag_handler() {
     echo "${YELLOW}Last updated more than ${threshold}${NC}: ${name}"
 
     local url
+    # shellcheck disable=SC2059
     printf -v url "${API_TAG_TMPL}" "${namespace}" "${repository}" "${name}"
     readonly url
 
@@ -282,6 +293,7 @@ function prune_tags() {
     readonly repository="$3"
 
     local url
+    # shellcheck disable=SC2059
     printf -v url "${API_TAGS_TMPL}?page_size=25" "${namespace}" "${repository}"
     readonly url
 
