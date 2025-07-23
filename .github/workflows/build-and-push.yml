@@ -32,7 +32,7 @@ on:
 jobs:
   determine-build-info:
     name: Build Info
-    uses: ./.github/workflows/workflow-determine-build-info.yml
+    uses: ./.github/workflows/⚙️-workflow-determine-build-info.yml
     with:
       runs-on: ubuntu-24.04
       workflow-id: ${{ inputs.workflow-id }}

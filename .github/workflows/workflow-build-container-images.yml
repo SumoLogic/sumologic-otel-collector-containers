@@ -1,4 +1,6 @@
-name: Build container images
+#################################################################################
+# A reusable workflow to build all container images for all supported platforms.
+#################################################################################
 
 on:
   workflow_call:

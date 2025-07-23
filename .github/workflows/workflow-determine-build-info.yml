@@ -1,4 +1,11 @@
-name: ":gear: Determine build info"
+#################################################################################
+# A reusable workflow to determine the build information required to fetch
+# dependencies, build and tag the various container images. This includes:
+# * The otelcol-sumo version information (core, sumo, git ref).
+# * The build number to uniquely identify a set of container images.
+# * The workflow ID provided via remote triggering or the ID of latest successful
+#   "Dev builds" workflow in the sumologic-otel-collector repository.
+#################################################################################
 
 on:
   workflow_call:
@@ -93,8 +100,9 @@ jobs:
       # the version.
       - uses: actions/download-artifact@v4
         with:
-          # name: otelcol-sumo-linux_amd64
+          name: otelcol-sumo-linux_amd64
           repository: sumologic/sumologic-otel-collector
+          run-id: ${{ steps.workflow.outputs.id }}
           github-token: ${{ secrets.gh-artifacts-token }}
 
       - name: Set version outputs

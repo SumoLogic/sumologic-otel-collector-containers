@@ -1,4 +1,7 @@
-name: Push container image indexes
+#################################################################################
+# A reusable workflow to push container images to various image registries such
+# as Amazon ECR & Docker Hub.
+#################################################################################
 
 on:
   workflow_call:
