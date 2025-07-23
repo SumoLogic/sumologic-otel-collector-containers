@@ -40,6 +40,9 @@ on:
         description: |
           The workflow ID that is detected/provided to fetch the collector from.
         value: ${{ jobs.determine.outputs.workflow-id }}
+    secrets:
+      gh-artifacts-token:
+        required: true
 
 defaults:
   run:

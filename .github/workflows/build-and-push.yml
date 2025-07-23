@@ -36,6 +36,8 @@ jobs:
     with:
       runs-on: ubuntu-24.04
       workflow-id: ${{ inputs.workflow-id }}
+    secrets:
+      gh-artifacts-token: ${{ secrets.GH_ARTIFACTS_TOKEN }}
 
   build-images:
     name: Container Images
