@@ -2,7 +2,7 @@
 # specific to each workflow. This ensures that each image has an
 # OTC_BUILD_NUMBER that is greater than previous runs which allows unique image
 # tags to be created for each build.
-name: Build / Push
+name: Build & Push
 
 # Sets the name of the CI run based on whether the run was triggered with or
 # without a workflow_id set.

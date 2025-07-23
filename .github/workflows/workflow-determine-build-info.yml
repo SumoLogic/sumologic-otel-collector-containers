@@ -110,6 +110,8 @@ jobs:
       - name: Set version outputs
         id: version
         run: |
+          ls -l
+          ls -l **/*
           build_number="${{ github.run_number }}"
 
           script="scripts/get-version-from-binary.sh"
