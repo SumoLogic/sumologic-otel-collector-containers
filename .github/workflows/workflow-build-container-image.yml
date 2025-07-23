@@ -2,6 +2,8 @@
 # A reusable workflow to build a single container image for a single platform.
 #################################################################################
 
+name: Workflow - Build Container Image
+
 on:
   workflow_call:
     inputs:

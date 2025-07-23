@@ -3,6 +3,8 @@
 # as Amazon ECR & Docker Hub.
 #################################################################################
 
+name: Workflow - Push Container Indexes
+
 on:
   workflow_call:
     inputs:

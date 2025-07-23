@@ -1,4 +1,4 @@
-name: "Prune"
+name: Schedule Task - Prune Images
 
 on:
   schedule:

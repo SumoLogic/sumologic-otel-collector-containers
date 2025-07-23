@@ -1,4 +1,4 @@
-name: "Publish release"
+name: Publish release
 
 run-name: >
   ${{ format('Publish Release for Workflow: {0}', inputs.workflow_id) }}
