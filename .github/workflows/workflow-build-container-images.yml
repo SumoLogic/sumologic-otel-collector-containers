@@ -49,6 +49,13 @@ jobs:
     # Builds an image for each item in the matrix. Target is the bake target to
     # run. Product is used to group together builds (e.g. ubi) from various bake
     # targets.
+    name: >
+      ${{ matrix.fips == true && 'Build FIPS' || 'Build' }} -
+      ${{
+      matrix.os != 'windows' && format('{0}/{1}', matrix.os, matrix.arch)
+      ||
+      format('{0}/{1}', matrix.target, matrix.arch)
+      }}
     uses: ./.github/workflows/workflow-build-container-image.yml
     with:
       arch: ${{ matrix.arch }}
