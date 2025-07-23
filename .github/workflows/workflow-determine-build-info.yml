@@ -110,15 +110,13 @@ jobs:
       - name: Set version outputs
         id: version
         run: |
-          ls -l
-          ls -l **/*
           build_number="${{ github.run_number }}"
 
           script="scripts/get-version-from-binary.sh"
-          binary="otelcol-sumo-linux_amd64"
-          core="$($script core $binary)"
-          git_ref="$($script gitref $binary)"
-          sumo="$($script sumo $binary)"
+          binary="${PWD}/otelcol-sumo-linux_amd64"
+          core="$($script core "$binary")"
+          git_ref="$($script gitref "$binary")"
+          sumo="$($script sumo "$binary")"
 
           {
           echo "build-number=${build_number}"
