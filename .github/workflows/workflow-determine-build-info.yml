@@ -81,6 +81,14 @@ jobs:
         run: |
           echo "id=${{ inputs.workflow-id || steps.latest-workflow.outputs.id }}" >> "$GITHUB_OUTPUT"
 
+      - name: Output workflow notices
+        run: |
+          workflow_url="https://github.com/SumoLogic/sumologic-otel-collector"
+          workflow_url="${workflow_url}/actions/runs"
+          workflow_url="${workflow_url}/${{ steps.workflow.outputs.id }}"
+
+          echo ::notice title=Remote Workflow URL::${workflow_url}
+
       # Download the otelcol-sumo binary for linux/amd64 and use it to determine
       # the version.
       - uses: actions/download-artifact@v4
@@ -108,16 +116,12 @@ jobs:
           echo "version=${core}-sumo-${sumo}"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Output notices
+      - name: Output version notices
         run: |
           core_version="${{ steps.version.outputs.core }}"
           git_ref="${{ steps.version.outputs.git-ref }}"
           sumo_version="${{ steps.version.outputs.sumo }}"
-          workflow_url="https://github.com/SumoLogic/sumologic-otel-collector"
-          workflow_url="${workflow_url}/actions/runs"
-          workflow_url="${workflow_url}/${{ steps.workflow.outputs.id }}"
 
-          echo ::notice title=Remote Workflow URL::${workflow_url}
           echo ::notice title=Collector Core Version::${core_version}
           echo ::notice title=Collector Sumo Version::${sumo_version}
           echo ::notice title=Collector Git Reference::${git_ref}
