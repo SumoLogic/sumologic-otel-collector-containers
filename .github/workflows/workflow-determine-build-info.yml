@@ -84,7 +84,7 @@ jobs:
         with:
           name: otelcol-sumo-linux_amd64
           repository: sumologic/sumologic-otel-collector
-          github-token: ${{ github.token }}
+          github-token: ${{ secrets.gh-artifacts-token }}
 
       - name: Set version outputs
         id: version
