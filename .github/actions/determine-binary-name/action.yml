@@ -1,5 +1,9 @@
 name: Determine the name of a binary
 
+description: |
+  Provides the expected name of a file based on the inputs provided to this
+  action.
+
 inputs:
   fips:
     description: Whether the binary is built with FIPS or not.

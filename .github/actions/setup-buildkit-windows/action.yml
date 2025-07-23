@@ -1,5 +1,8 @@
 name: Setup BuildKit on Windows
 
+description: |
+  Installs and configures BuildKit & its dependencies for Windows.
+
 inputs:
   buildkit-version:
     description: The version of buildkit to install.

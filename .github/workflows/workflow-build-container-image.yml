@@ -73,7 +73,11 @@ defaults:
 
 jobs:
   build:
-    name: Build
+    name: >
+      Build - ${{ inputs.os }}
+      ${{ inputs.os == 'windows' && format('({0})', inputs.os-version) }}
+      ${{ format('-{0}', inputs.arch) }}
+      ${{ inputs.fips == true && '-fips' }}
     runs-on: ${{ inputs.runs-on }}
     steps:
       - uses: actions/checkout@v4
