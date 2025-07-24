@@ -159,7 +159,7 @@ jobs:
       - name: Set up Buildx
         if: runner.os != 'Windows'
         id: buildx
-        uses: docker/setup-buildx-action@v3.10.0
+        uses: docker/setup-buildx-action@v3.11.1
 
       - name: Show Buildx platforms
         if: runner.os != 'Windows'
