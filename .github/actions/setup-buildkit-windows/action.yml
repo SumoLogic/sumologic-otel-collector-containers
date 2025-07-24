@@ -42,17 +42,21 @@ runs:
 
     - name: Generate cache key
       id: cache-key
-      shell: bash
+      shell: pwsh
       run: |
-        buildkit="${{ inputs.buildkit-version }}"
-        buildx="${{ inputs.buildx-version }}"
-        containerd="${{ inputs.containerd }}"
-        docker="${{ inputs.docker-version }}"
+        $buildkit = "${{ inputs.buildkit-version }}"
+        $buildx = "${{ inputs.buildx-version }}"
+        $containerd = "${{ inputs.containerd }}"
+        $docker = "${{ inputs.docker-version }}"
 
-        versions="${buildkit}-${buildx}-${containerd}-${docker}"
-        checksum="$(echo "$versions" | shasum)"
+        $versions = "${buildkit}-${buildx}-${containerd}-${docker}"
+        $encoded = [System.Text.Encoding]::UTF8.GetBytes($versions)
+        $sha256 = [System.Security.Cryptography.HashAlgorithm]::Create("sha256")
+        $hash = $sha256.ComputeHash($versions)
+        $checksumFormatted = [System.BitConverter]::ToString($hash)
+        $checksum = $checksumFormatted.Replace("-", "").ToLowerInvariant()
 
-        echo "name=buildkit-cache-${checksum}" >> "$GITHUB_OUTPUT"
+        "name=$checksum" >> $env:GITHUB_OUTPUT
 
     - name: Setup VHDX for caching
       id: cache

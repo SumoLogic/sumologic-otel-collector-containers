@@ -63,11 +63,6 @@ runs:
         "LETTER=${env:LETTER}" >> $env:GITHUB_ENV
         "SIZE=${env:SIZE}" >> $env:GITHUB_ENV
 
-    - name: Set cache key
-      shell: pwsh
-      run: |
-        "letter=$selected" >> $env:GITHUB_OUTPUT
-
     - name: Cache VHDX Image
       id: cache
       uses: actions/cache@v4
