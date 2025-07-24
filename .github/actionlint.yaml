@@ -1,0 +1,6 @@
+config-variables: null
+
+paths:
+  .github/workflows/build-and-push.yml:
+    ignore:
+      - 'property "workflow_id" is not defined in object type.+'

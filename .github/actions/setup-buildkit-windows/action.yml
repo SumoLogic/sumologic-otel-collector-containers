@@ -17,6 +17,11 @@ inputs:
     description: The version of Docker to install.
     required: true
 
+outputs:
+  vhdx-name:
+    description: The name of the VHDX image used for caching.
+    value: ${{ steps.cache.outputs.vhdx-name }}
+
 runs:
   using: "composite"
   steps:
@@ -33,14 +38,37 @@ runs:
       shell: bash
       run: |
         arch="$(uname -m)"
-        echo "name=${arch}" >> $GITHUB_OUTPUT
+        echo "name=${arch}" >> "$GITHUB_OUTPUT"
+
+    - name: Generate cache key
+      id: cache-key
+      shell: bash
+      run: |
+        buildkit="${{ inputs.buildkit-version }}"
+        buildx="${{ inputs.buildx-version }}"
+        containerd="${{ inputs.containerd }}"
+        docker="${{ inputs.docker-version }}"
+
+        versions="${buildkit}-${buildx}-${containerd}-${docker}"
+        checksum="$(echo "$versions" | shasum)"
+
+        echo "name=buildkit-cache-${checksum}" >> "$GITHUB_OUTPUT"
+
+    - name: Setup VHDX for caching
+      id: cache
+      uses: ./.github/actions/setup-vhdx
+      with:
+        cache-key: ${{ steps.cache-key.outputs.name }}
+        name: buildkit-cache
+        size: 500MB
 
     # NOTE: use version 1.7.27 or newer
     - name: Download & Install containerd
       shell: pwsh
       run: |
         $start = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
-        $containerdPath = "D:\containerd"
+        $drive = "${{ steps.cache.outputs.drive-letter }}"
+        $containerdPath = "${drive}:\containerd"
         $binPath = "${containerdPath}\bin"
         $version = "${{ inputs.containerd-version }}"
         $arch = "amd64"
@@ -62,7 +90,8 @@ runs:
       shell: pwsh
       run: |
         $start = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
-        $configPath = "D:\containerd\config.toml"
+        $drive = "${{ steps.cache.outputs.drive-letter }}"
+        $configPath = "${drive}:\containerd\config.toml"
         containerd.exe config default | Out-File $configPath -Encoding ascii
         Get-Content $configPath
         $end = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
@@ -91,7 +120,8 @@ runs:
       shell: pwsh
       run: |
         $start = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
-        $buildkitPath = "D:\buildkit"
+        $drive = "${{ steps.cache.outputs.drive-letter }}"
+        $buildkitPath = "${drive}:\buildkit"
         $binPath = "${buildkitPath}\bin"
         $version = "${{ inputs.buildkit-version }}"
         $arch = "amd64"
