@@ -8,24 +8,29 @@ name: Workflow - Push Container Indexes
 on:
   workflow_call:
     inputs:
-      target:
+      git-ref:
         description: |
-          The name of the bake target to create tags for.
-        type: string
-        required: true
-      tags:
-        description: |
-          A list of tags (in JSON format) to create for the source images.
+          The git reference used to build the collector. This is used to tag the
+          container images with the git commit SHA.
         type: string
         required: true
       version:
-        description: The version of OTC the images are for.
+        description: |
+          The version of the collector to use for tagging the container images.
+          This is used to tag the container images with the version of the
+          collector.
         type: string
         required: true
     secrets:
       aws-access-key-id:
+        description: |
+          The AWS access key ID used to authenticate with Amazon ECR.
+          This should be stored as a GitHub secret.
         required: true
       aws-secret-access-key:
+        description: |
+          The AWS secret access key used to authenticate with Amazon ECR.
+          This should be stored as a GitHub secret.
         required: true
 
 defaults:
@@ -34,51 +39,46 @@ defaults:
 
 jobs:
   push:
-    name: Push
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3.6.0
-
-      - name: Set up Buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3.10.0
-
-      - name: Show Buildx platforms
-        run: echo ${{ steps.buildx.outputs.platforms }}
-
-      - name: Login to ECR
-        uses: docker/login-action@v3
-        with:
-          registry: 663229565520.dkr.ecr.us-east-1.amazonaws.com
-          username: ${{ secrets.aws-access-key-id }}
-          password: ${{ secrets.aws-secret-access-key }}
-
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: "manifest_${{ inputs.target }}_*"
-          path: manifests
-          merge-multiple: true
-
-      - name: Determine source images (ECR)
-        run: |
-          jq -jf jq/ci/manifest-sources.jq --arg target ${{ inputs.target }} \
-          manifests/*-ecr.json | tee sources-ecr.txt
-
-      - name: Determine tags (ECR)
-        env:
-          REPO_BASE: 663229565520.dkr.ecr.us-east-1.amazonaws.com
-          REPO_ORG: sumologic
-          REPO_NAME: sumologic-otel-collector-ci-builds
-        run: |
-          REPO="${REPO_BASE}/${REPO_ORG}/${REPO_NAME}"
-          echo '${{ inputs.tags }}' | jq -jf jq/ci/tags.jq --arg url "$REPO" > ecr-tags.txt
-
-      - name: Create multiplatform image index (ECR)
-        run: |
-          while IFS= read -r tag; do
-            docker manifest create "${tag}" "$(cat sources-ecr.txt)"
-            docker manifest push "${tag}"
-          done < ecr-tags.txt
+    name: ${{ matrix.target }}
+    uses: ./.github/workflows/workflow-push-container-index.yml
+    strategy:
+      matrix:
+        include:
+          - target: standard
+            tags: >
+              [
+              "latest",
+              "${{ github.sha }}",
+              "${{ inputs.git-ref }}",
+              "${{ inputs.version }}"
+              ]
+          - target: standard-fips
+            tags: >
+              [
+              "latest-fips",
+              "${{ github.sha }}-fips",
+              "${{ inputs.git-ref }}-fips",
+              "${{ inputs.version }}-fips"
+              ]
+          - target: ubi
+            tags: >
+              [
+              "latest-ubi",
+              "${{ github.sha }}-ubi",
+              "${{ inputs.git-ref }}-ubi",
+              "${{ inputs.version }}-ubi"
+              ]
+          - target: ubi-fips
+            tags: >
+              [
+              "latest-ubi-fips",
+              "${{ github.sha }}-ubi-fips",
+              "${{ inputs.git-ref }}-ubi-fips",
+              "${{ inputs.version }}-ubi-fips"
+              ]
+    with:
+      tags: ${{ matrix.tags }}
+      target: ${{ matrix.target }}
+    secrets:
+      aws-access-key-id: ${{ secrets.aws-access-key-id }}
+      aws-secret-access-key: ${{ secrets.aws-secret-access-key }}

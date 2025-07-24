@@ -56,103 +56,24 @@ jobs:
       gh-artifacts-token: ${{ secrets.GH_ARTIFACTS_TOKEN }}
 
   push-indexes:
-    name: Container Indexes - ${{ matrix.target }}
     uses: ./.github/workflows/workflow-push-container-indexes.yml
     needs:
       - build-images
       - determine-build-info
-    strategy:
-      matrix:
-        include:
-          - target: standard
-            tags: >
-              [
-              "latest",
-              "${{ github.sha }}",
-              "${{ needs.determine-build-info.outputs.version }}"
-              ]
-          - target: standard-fips
-            tags: >
-              [
-              "latest-fips",
-              "${{ github.sha }}-fips",
-              "${{ needs.determine-build-info.outputs.version }}-fips"
-              ]
-          - target: ubi
-            tags: >
-              [
-              "latest-ubi",
-              "${{ github.sha }}-ubi",
-              "${{ needs.determine-build-info.outputs.version }}-ubi"
-              ]
-          - target: ubi-fips
-            tags: >
-              [
-              "latest-ubi-fips",
-              "${{ github.sha }}-ubi-fips",
-              "${{ needs.determine-build-info.outputs.version }}-ubi-fips"
-              ]
     with:
-      tags: ${{ matrix.tags }}
-      target: ${{ matrix.target }}
+      git-ref: ${{ needs.determine-build-info.outputs.git-ref }}
       version: ${{ needs.determine-build-info.outputs.version }}
     secrets:
       aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
       aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-  # Creates version files and uploads them as artifacts. This enables the
-  # release workflow to determine the version information for a given workflow.
   version-files:
-    name: Version Files
-    runs-on: ubuntu-24.04
+    uses: ./.github/workflows/workflow-upload-version-files.yml
     needs:
       - determine-build-info
-    env:
-      BUILD_NUMBER: ${{ needs.determine-build-info.outputs.build-number }}
-      CORE_VERSION: ${{ needs.determine-build-info.outputs.core-version }}
-      GIT_REF: ${{ needs.determine-build-info.outputs.git-ref }}
-      SUMO_VERSION: ${{ needs.determine-build-info.outputs.sumo-version }}
-      VERSION: ${{ needs.determine-build-info.outputs.version }}
-    steps:
-      - name: Create version files
-        run: |
-          echo "${BUILD_NUMBER}" >> otc-build-number.txt
-          echo "${CORE_VERSION}" > otc-core-version.txt
-          echo "${GIT_REF}" >> otc-git-reference.txt
-          echo "${SUMO_VERSION}" > otc-sumo-version.txt
-          echo "${VERSION}" > otc-version.txt
-
-      - name: Store otc-build-number.txt as action artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: otc-build-number.txt
-          path: ./otc-build-number.txt
-          if-no-files-found: error
-
-      - name: Store otc-core-version.txt as action artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: otc-core-version.txt
-          path: ./otc-core-version.txt
-          if-no-files-found: error
-
-      - name: Store otc-git-reference.txt as action artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: otc-git-reference.txt
-          path: ./otc-git-reference.txt
-          if-no-files-found: error
-
-      - name: Store otc-sumo-version.txt as action artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: otc-sumo-version.txt
-          path: ./otc-sumo-version.txt
-          if-no-files-found: error
-
-      - name: Store otc-version.txt as action artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: otc-version.txt
-          path: ./otc-version.txt
-          if-no-files-found: error
+    with:
+      build-number: ${{ needs.determine-build-info.outputs.build-number }}
+      core-version: ${{ needs.determine-build-info.outputs.core-version }}
+      git-ref: ${{ needs.determine-build-info.outputs.git-ref }}
+      sumo-version: ${{ needs.determine-build-info.outputs.sumo-version }}
+      version: ${{ needs.determine-build-info.outputs.version }}
