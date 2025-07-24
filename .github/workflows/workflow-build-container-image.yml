@@ -211,16 +211,6 @@ jobs:
             *.platform=${{ steps.platform.outputs.name-with-os-version }}
             *.tags=
 
-      # NOTE: There doesn't appear to be a simple way to run post hooks in
-      # composite actions. We must unmount the VHDX image after we're done using
-      # it but before the post-cache hook runs. We should be able to fix this by
-      # converting our setup-vhdx action to NodeJS.
-      - name: Unmount BuildKit Cache (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          Dismount-VHD -Path ${{ steps.buildkit.outputs.vhdx-name }}
-
       - name: Print & fix metadata
         id: fix-metadata
         if: |
@@ -231,12 +221,12 @@ jobs:
           echo "-- Current metadata (ECR)"
           echo '${{ steps.build-ecr.outputs.metadata }}' | tee metadata-ecr.json
           echo "-- Fixed metadata (ECR)"
-          jq -jf jq/ci/fix-metadata.jq metadata.json | tee metadata-ecr.json
+          jq -jf jq/ci/fix-metadata.jq metadata-ecr.json | tee metadata-ecr.json
 
           echo "-- Current metadata (Docker Hub)"
           echo '${{ steps.build-dh.outputs.metadata }}' | tee metadata-dh.json
           echo "-- Fixed metadata (Docker Hub)"
-          jq -jf jq/ci/fix-metadata.jq metadata.json | tee metadata-dh.json
+          jq -jf jq/ci/fix-metadata.jq metadata-dh.json | tee metadata-dh.json
 
       - name: Set container image manifest output
         if: steps.fix-metadata.conclusion == 'success'
@@ -260,3 +250,13 @@ jobs:
           name: ${{ steps.platform.outputs.manifest-name }}-dh
           path: ${{ steps.platform.outputs.manifest-name }}-dh.json
           if-no-files-found: error
+
+      # NOTE: There doesn't appear to be a simple way to run post hooks in
+      # composite actions. We must unmount the VHDX image after we're done using
+      # it but before the post-cache hook runs. We should be able to fix this by
+      # converting our setup-vhdx action to NodeJS.
+      - name: Unmount BuildKit Cache (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Dismount-VHD -Path ${{ steps.buildkit.outputs.vhdx-name }}
