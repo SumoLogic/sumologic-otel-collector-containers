@@ -7,6 +7,11 @@ description: |
   otherwise slow on Windows.
 
 inputs:
+  cache-key:
+    description:
+      The key to use for caching the VHDX image. This should be unique
+      to the build environment and tools being used.
+    required: true
   name:
     description: The name of the VHDX image (without extension).
     required: true
