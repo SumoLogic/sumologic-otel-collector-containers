@@ -91,6 +91,13 @@ jobs:
             os-version: 10.0.26100.4349
             arch: amd64
             runs-on: windows-2025
+          # ubi product
+          - product: ubi
+            os: linux
+            arch: amd64
+          - product: ubi
+            os: linux
+            arch: arm64
           # standard-fips product
           - product: standard-fips
             fips: true
@@ -98,13 +105,6 @@ jobs:
             arch: amd64
           - product: standard-fips
             fips: true
-            os: linux
-            arch: arm64
-          # ubi product
-          - product: ubi
-            os: linux
-            arch: amd64
-          - product: ubi
             os: linux
             arch: arm64
           # ubi-fips product

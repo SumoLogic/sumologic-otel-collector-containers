@@ -64,7 +64,7 @@ jobs:
 
       - name: Determine source images (ECR)
         run: |
-          jq -jf ci/jq/manifest-sources.jq --arg target ${{ inputs.target }} \
+          jq -jf jq/ci/manifest-sources.jq --arg target ${{ inputs.target }} \
           manifests/*-ecr.json | tee sources-ecr.txt
 
       - name: Determine tags (ECR)
@@ -74,7 +74,7 @@ jobs:
           REPO_NAME: sumologic-otel-collector-ci-builds
         run: |
           REPO="${REPO_BASE}/${REPO_ORG}/${REPO_NAME}"
-          echo '${{ inputs.tags }}' | jq -jf ci/jq/tags.jq --arg url "$REPO" > ecr-tags.txt
+          echo '${{ inputs.tags }}' | jq -jf jq/ci/tags.jq --arg url "$REPO" > ecr-tags.txt
 
       - name: Create multiplatform image index (ECR)
         run: |
