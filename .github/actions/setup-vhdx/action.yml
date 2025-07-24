@@ -73,7 +73,7 @@ runs:
       uses: actions/cache@v4
       with:
         path: ${{ inputs.name }}.vhdx
-        key: vhdx-${{ inputs.cache-key }}
+        key: ${{ inputs.cache-key }}
 
     - name: Create and Mount VHDX Image
       if: steps.cache.outputs.cache-hit != 'true'

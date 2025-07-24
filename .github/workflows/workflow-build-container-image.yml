@@ -32,10 +32,6 @@ on:
           up in the same multi-platform image.
         type: string
         required: true
-      push:
-        description: Push the image to Docker Hub, ECR, etc.
-        default: false
-        type: boolean
       target:
         description: |
           The bake target to build. The product name will be used as the target
@@ -183,29 +179,7 @@ jobs:
           username: ${{ secrets.dockerhub-login }}
           password: ${{ secrets.dockerhub-password }}
 
-      - name: Build (Local)
-        if: ! inputs.push
-        id: build-local
-        uses: docker/bake-action@v6
-        with:
-          source: .
-          targets: ${{ inputs.target || inputs.product }}
-          provenance: false
-          files: |
-            ./docker-bake.hcl
-            ./docker-bake.ecr-override.hcl
-            ./docker-bake.ci-override.hcl
-            cwd://${{ steps.meta.outputs.bake-file }}
-          set: |
-            *.platform=${{ steps.platform.outputs.name-with-os-version }}
-            *.tags=local/otelcol-sumo
-            *.output=push=local/otelcol-sumo
-            *.output=push=false
-            *.output=push-by-digest=false
-            *.output=type=docker
-
       - name: Build and push (ECR)
-        if: inputs.push
         id: build-ecr
         uses: docker/bake-action@v6
         with:
@@ -222,7 +196,6 @@ jobs:
             *.tags=
 
       - name: Build and push (Docker)
-        if: inputs.push
         id: build-dh
         uses: docker/bake-action@v6
         with:

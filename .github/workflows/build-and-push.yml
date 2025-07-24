@@ -46,7 +46,6 @@ jobs:
       - determine-build-info
     with:
       build-number: ${{ needs.determine-build-info.outputs.build-number }}
-      push: true
       version: ${{ needs.determine-build-info.outputs.version }}
       workflow-id: ${{ needs.determine-build-info.outputs.workflow-id }}
     secrets:
