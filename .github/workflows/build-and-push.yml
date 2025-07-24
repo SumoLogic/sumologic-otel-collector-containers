@@ -56,7 +56,7 @@ jobs:
       gh-artifacts-token: ${{ secrets.GH_ARTIFACTS_TOKEN }}
 
   push-indexes:
-    name: Container Indexes
+    name: Container Indexes - ${{ matrix.target }}
     uses: ./.github/workflows/workflow-push-container-indexes.yml
     needs:
       - build-images
