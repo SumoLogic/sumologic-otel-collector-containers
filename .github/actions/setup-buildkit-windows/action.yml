@@ -46,13 +46,13 @@ runs:
       run: |
         $buildkit = "${{ inputs.buildkit-version }}"
         $buildx = "${{ inputs.buildx-version }}"
-        $containerd = "${{ inputs.containerd }}"
+        $containerd = "${{ inputs.containerd-version }}"
         $docker = "${{ inputs.docker-version }}"
 
         $versions = "${buildkit}-${buildx}-${containerd}-${docker}"
-        $encoded = [System.Text.Encoding]::UTF8.GetBytes($versions)
+        $bytes = [System.Text.Encoding]::UTF8.GetBytes($versions)
         $sha256 = [System.Security.Cryptography.HashAlgorithm]::Create("sha256")
-        $hash = $sha256.ComputeHash($versions)
+        $hash = $sha256.ComputeHash($bytes)
         $checksumFormatted = [System.BitConverter]::ToString($hash)
         $checksum = $checksumFormatted.Replace("-", "").ToLowerInvariant()
 
