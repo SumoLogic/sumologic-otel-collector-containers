@@ -138,12 +138,12 @@ jobs:
 
       # NOTE: We need to use the netapi32.dll from the servercore image to
       # allow Go programs to work correctly in our ltsc2022 nanoserver image.
-      - name: Grab netapi32.dll from servercore image
-        if: inputs.target == 'windows-ltsc2022'
-        shell: pwsh
-        run: |
-          docker create --name temp-container mcr.microsoft.com/windows/servercore:ltsc2022
-          docker cp temp-container:C:\Windows\System32\netapi32.dll .
+      # - name: Grab netapi32.dll from servercore image
+      #   if: inputs.target == 'windows-ltsc2022'
+      #   shell: pwsh
+      #   run: |
+      #     docker create --name temp-container mcr.microsoft.com/windows/servercore:ltsc2022
+      #     docker cp temp-container:C:\Windows\System32\netapi32.dll .
 
       - name: Setup BuildKit (Windows)
         id: buildkit

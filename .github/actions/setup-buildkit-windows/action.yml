@@ -208,6 +208,7 @@ runs:
       uses: docker/setup-docker-action@v4
       with:
         version: ${{ inputs.docker-version }}
+        context: ""
         daemon-config: |
           {
             "data-root": "C:\\ProgramData\\Docker",
