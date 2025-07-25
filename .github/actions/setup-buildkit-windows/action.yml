@@ -198,12 +198,19 @@ runs:
         $ts = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
         "timestamp=${ts}" >> $env:GITHUB_OUTPUT
 
+    - name: Debug
+      shell: pwsh
+      run: |
+        ls C:\ProgramData\Docker
+        ls C:\ProgramData\Docker\windowsfilter
+
     - name: Setup Docker
       uses: docker/setup-docker-action@v4
       with:
         version: ${{ inputs.docker-version }}
         daemon-config: |
           {
+            "data-root": "C:\ProgramData\Docker",
             "default-runtime": "io.containerd.runhcs.v1",
             "features": {
               "buildkit": true,
