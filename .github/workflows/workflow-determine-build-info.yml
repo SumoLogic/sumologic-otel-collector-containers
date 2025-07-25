@@ -12,9 +12,6 @@ name: Workflow - Determine Build Info
 on:
   workflow_call:
     inputs:
-      runs-on:
-        default: ubuntu-24.04
-        type: string
       workflow-id:
         description: |
           The ID of the GitHub Actions workflow in sumologic-otel-collector to
@@ -57,7 +54,7 @@ defaults:
 jobs:
   determine:
     name: Determine
-    runs-on: ${{ inputs.runs-on }}
+    runs-on: ubuntu-24.04
     outputs:
       build-number: ${{ steps.version.outputs.build_number }}
       core-version: ${{ steps.version.outputs.core }}
