@@ -20,7 +20,7 @@ inputs:
 outputs:
   vhdx-path:
     description: The path to the VHDX image file.
-    value: ${{ steps.vhdx-path.outputs.vhdx-path }}
+    value: ${{ steps.cache-config.outputs.path }}
 
 runs:
   using: "composite"
@@ -40,62 +40,38 @@ runs:
         arch="$(uname -m)"
         echo "name=${arch}" >> "$GITHUB_OUTPUT"
 
-    - name: Generate cache key
-      id: cache-key
+    - name: Set cache outputs
+      id: cache-config
       shell: bash
       run: |
+        base_key="buildkit-cache"
         hash="${{ hashFiles('.github/actions/setup-buildkit-windows/action.yml') }}"
-        name="buildkit-cache-${hash}"
+        name="${base_key}-${hash}"
+        vhdx_path="${base_key}.vhdx"
 
         echo "name=${name}" >> "$GITHUB_OUTPUT"
+        echo "path=${vhdx_path}" >> "$GITHUB_OUTPUT"
 
     - name: Cache VHDX Image
       id: cache
       uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684
       with:
-        path: buildkit-cache.vhdx
-        key: ${{ steps.cache-key.outputs.name }}
+        path: ${{ steps.cache-config.outputs.path }}
+        key: ${{ steps.cache-config.outputs.name }}
 
-    - name: Create & mount VHDX for caching
-      if: steps.cache.outputs.cache-hit != 'true'
-      id: create-vhdx
+    - name: Setup VHDX for caching
+      id: vhdx
       uses: ./.github/actions/setup-vhdx
       with:
-        name: buildkit-cache.vhdx
+        name: ${{ steps.cache-config.outputs.path }}
         size: 500MB
-
-    - name: Mount VHDX for caching
-      if: steps.cache.outputs.cache-hit == 'true'
-      id: mount-vhdx
-      uses: ./.github/actions/setup-vhdx
-      with:
-        name: buildkit-cache.vhdx
-        skip-create: true
-
-    - name: Output VHDX path
-      id: vhdx-path
-      shell: pwsh
-      run: |
-        $vhdxPath = (Get-Location).Path + "\buildkit-cache.vhdx"
-        "vhdx-path=$vhdxPath" >> $env:GITHUB_OUTPUT
-
-    - name: Output drive letter
-      id: cache-drive
-      shell: pwsh
-      run: |
-        $letter = "${{
-        steps.create-vhdx.outputs.drive-letter
-        ||
-        steps.mount-vhdx.outputs.drive-letter
-        }}"
-
-        "letter=${letter}" >> $env:GITHUB_OUTPUT
+        skip-create: ${{ steps.cache.outputs.cache-hit == 'true' }}
 
     - name: Output containerd values
       id: containerd
       shell: pwsh
       run: |
-        $drive = "${{ steps.cache-drive.outputs.letter }}"
+        $drive = "${{ steps.vhdx.outputs.drive-letter }}"
         $containerdPath = "${drive}:\containerd"
         $binPath = "${containerdPath}\bin"
 
@@ -164,7 +140,7 @@ runs:
       id: buildkit
       shell: pwsh
       run: |
-        $drive = "${{ steps.cache-drive.outputs.letter }}"
+        $drive = "${{ steps.vhdx.outputs.drive-letter }}"
         $buildkitPath = "${drive}:\buildkit"
         $binPath = "${buildkitPath}\bin"
 

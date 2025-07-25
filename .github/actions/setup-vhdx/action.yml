@@ -72,21 +72,23 @@ runs:
         "SIZE=${env:SIZE}" >> $env:GITHUB_ENV
         "VHDXPATH=${env:VHDXPATH}" >> $env:GITHUB_ENV
 
-    - name: Create & Mount VHDX Image
+    - name: Create VHD
       if: inputs.skip-create != 'true'
       shell: pwsh
       run: |
-        $Drive = New-VHD -Path "${env:VHDXPATH}" -SizeBytes ${env:SIZE} -Dynamic |
-          Mount-VHD -PassThru |
-          Initialize-Disk -PassThru |
-          New-Partition -UseMaximumSize |
-          Format-Volume -FileSystem NTFS -Confirm:$false -Force
-        $Drive | Get-Partition | Set-Partition -NewDriveLetter "${env:LETTER}"
+        $VHD = New-VHD -Path "${env:VHDXPATH}" -SizeBytes ${env:SIZE} -Dynamic
+        $Mount = $VHD | Mount-VHD -PassThru
+        $Disk = $Mount | Initialize-Disk -PassThru
+        $Partition = $Disk | New-Partition -UseMaximumSize
+        $Partition | Format-Volume -FileSystem NTFS -Confirm:$false -Force
+        $VHD | Dismount-VHD
 
-    - name: Mount VHDX
-      if: inputs.skip-create == 'true'
+    - name: Mount VHD
       shell: pwsh
       run: |
-        $Drive = Mount-VHD -Path "${env:VHDXPATH}" -PassThru
-        $Drive | Get-Disk | Get-Partition | Where-Object { $_.Type -eq 'Basic' } |
-          Set-Partition -NewDriveLetter "${env:LETTER}"
+        $VHD = Get-VHD -Path "${env:VHDXPATH}"
+        $Mount = $VHD | Mount-VHD -PassThru
+        $Disk = $Mount | Get-Disk
+        $Partitions = $Disk | Get-Partition
+        $Partition = $Partitions | Where-Object { $_.Type -eq 'Basic' }
+        $Partition | Set-Partition -NewDriveLetter "${env:LETTER}"
