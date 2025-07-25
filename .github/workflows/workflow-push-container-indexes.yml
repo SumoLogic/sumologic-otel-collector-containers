@@ -21,17 +21,6 @@ on:
           collector.
         type: string
         required: true
-    secrets:
-      aws-access-key-id:
-        description: |
-          The AWS access key ID used to authenticate with Amazon ECR.
-          This should be stored as a GitHub secret.
-        required: true
-      aws-secret-access-key:
-        description: |
-          The AWS secret access key used to authenticate with Amazon ECR.
-          This should be stored as a GitHub secret.
-        required: true
 
 defaults:
   run:
@@ -79,6 +68,4 @@ jobs:
     with:
       tags: ${{ matrix.tags }}
       target: ${{ matrix.target }}
-    secrets:
-      aws-access-key-id: ${{ secrets.aws-access-key-id }}
-      aws-secret-access-key: ${{ secrets.aws-secret-access-key }}
+    secrets: inherit

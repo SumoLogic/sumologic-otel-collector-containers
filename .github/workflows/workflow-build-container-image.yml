@@ -56,17 +56,6 @@ on:
           fetch artifacts from.
         type: string
         required: true
-    secrets:
-      aws-access-key-id:
-        description: |
-          The AWS access key ID used to authenticate with Amazon ECR.
-          This should be stored as a GitHub secret.
-        required: true
-      aws-secret-access-key:
-        description: |
-          The AWS secret access key used to authenticate with Amazon ECR.
-          This should be stored as a GitHub secret.
-        required: true
 
 defaults:
   run:
@@ -183,8 +172,8 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: 663229565520.dkr.ecr.us-east-1.amazonaws.com
-          username: ${{ secrets.aws-access-key-id }}
-          password: ${{ secrets.aws-secret-access-key }}
+          username: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          password: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: Build (Local)
         if: inputs.pull_request == true

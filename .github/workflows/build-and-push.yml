@@ -46,9 +46,7 @@ jobs:
       build-number: ${{ needs.determine-build-info.outputs.build-number }}
       version: ${{ needs.determine-build-info.outputs.version }}
       workflow-id: ${{ needs.determine-build-info.outputs.workflow-id }}
-    secrets:
-      aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    secrets: inherit
 
   push-indexes:
     name: Container Indexes
@@ -59,9 +57,7 @@ jobs:
     with:
       git-ref: ${{ needs.determine-build-info.outputs.git-ref }}
       version: ${{ needs.determine-build-info.outputs.version }}
-    secrets:
-      aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    secrets: inherit
 
   version-files:
     name: Version Files

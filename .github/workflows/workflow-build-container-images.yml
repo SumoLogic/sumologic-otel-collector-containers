@@ -28,17 +28,6 @@ on:
           fetch artifacts from.
         type: string
         required: true
-    secrets:
-      aws-access-key-id:
-        description: |
-          The AWS access key ID used to authenticate with Amazon ECR.
-          This should be stored as a GitHub secret.
-        required: false
-      aws-secret-access-key:
-        description: |
-          The AWS secret access key used to authenticate with Amazon ECR.
-          This should be stored as a GitHub secret.
-        required: false
 
 defaults:
   run:
@@ -69,9 +58,7 @@ jobs:
       runs-on: ${{ matrix.runs-on || 'ubuntu-24.04' }}
       version: ${{ inputs.version }}
       workflow-id: ${{ inputs.workflow-id }}
-    secrets:
-      aws-access-key-id: ${{ secrets.aws-access-key-id }}
-      aws-secret-access-key: ${{ secrets.aws-secret-access-key }}
+    secrets: inherit
     strategy:
       matrix:
         include:
