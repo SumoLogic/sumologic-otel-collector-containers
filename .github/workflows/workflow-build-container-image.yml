@@ -32,7 +32,7 @@ on:
           up in the same multi-platform image.
         type: string
         required: true
-      pull_request:
+      pull-request:
         description: |
           Whether the build is for a pull request.
         type: boolean
@@ -176,7 +176,7 @@ jobs:
           password: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: Build (Local)
-        if: inputs.pull_request == true
+        if: inputs.pull-request == 'true'
         id: build-local
         uses: docker/bake-action@v6
         with:
@@ -192,7 +192,7 @@ jobs:
             *.tags=
 
       - name: Build and push (ECR)
-        if: inputs.pull_request != true
+        if: inputs.pull-request != 'true'
         id: build-ecr
         uses: docker/bake-action@v6
         with:

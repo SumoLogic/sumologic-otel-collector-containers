@@ -210,7 +210,7 @@ runs:
         version: ${{ inputs.docker-version }}
         daemon-config: |
           {
-            "data-root": "C:\ProgramData\Docker",
+            "data-root": "C:\\ProgramData\\Docker",
             "default-runtime": "io.containerd.runhcs.v1",
             "features": {
               "buildkit": true,

@@ -12,7 +12,7 @@ on:
           The build number of the container image.
         type: string
         required: true
-      pull_request:
+      pull-request:
         description: |
           Whether the build is for a pull request.
         type: boolean
@@ -53,7 +53,7 @@ jobs:
       os: ${{ matrix.os }}
       os-version: ${{ matrix.os-version }}
       product: ${{ matrix.product }}
-      pull_request: ${{ inputs.pull_request }}
+      pull-request: ${{ inputs.pull-request }}
       target: ${{ matrix.target }}
       runs-on: ${{ matrix.runs-on || 'ubuntu-24.04' }}
       version: ${{ inputs.version }}
