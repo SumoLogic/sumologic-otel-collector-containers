@@ -209,8 +209,8 @@ jobs:
           set: |
             *.platform=${{ steps.platform.outputs.name-with-os-version }}
             *.tags=
-            *.cache-from=type=gha
-            *.cache-to=type=gha,mode=max
+            *.cache-from=type=gha,scope=${{ inputs.target || inputs.product }}-${{ steps.platform.oututs.name-with-os-version }}
+            *.cache-to=type=gha,mode=max,scope=${{ inputs.target || inputs.product }}-${{ steps.platform.oututs.name-with-os-version }}
 
       - name: Print & fix metadata
         id: fix-metadata
