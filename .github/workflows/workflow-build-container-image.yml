@@ -190,6 +190,8 @@ jobs:
           set: |
             *.platform=${{ steps.platform.outputs.name-with-os-version }}
             *.tags=
+            *.cache-from=type=gha
+            *.cache-to=type=gha,mode=max
 
       - name: Build and push (ECR)
         if: inputs.pull-request != 'true'
@@ -207,6 +209,8 @@ jobs:
           set: |
             *.platform=${{ steps.platform.outputs.name-with-os-version }}
             *.tags=
+            *.cache-from=type=gha
+            *.cache-to=type=gha,mode=max
 
       - name: Print & fix metadata
         id: fix-metadata
