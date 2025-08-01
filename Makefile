@@ -34,6 +34,18 @@ ECR_STABLE_REPO ?= sumologic/sumologic-otel-collector
 ECR_STABLE_URI ?= $(ECR_STABLE_REGISTRY)/$(ECR_STABLE_REPO)
 
 #################################################################################
+# Docker Hub variables
+#################################################################################
+
+DH_RC_REGISTRY ?= docker.io
+DH_RC_REPO ?= sumologic/sumologic-otel-collector-release-candidates
+DH_RC_URI ?= $(DH_RC_REGISTRY)/$(DH_RC_REPO)
+
+DH_STABLE_REGISTRY ?= docker.io
+DH_STABLE_REPO ?= sumologic/sumologic-otel-collector
+DH_STABLE_URI ?= $(DH_STABLE_REGISTRY)/$(DH_STABLE_REPO)
+
+#################################################################################
 # Default target
 #################################################################################
 
@@ -98,7 +110,7 @@ login-ecr-stable:
 	@$(MAKE) _login-ecr \
 		ECR_SUBCMD="ecr-public" \
 		AWS_REGION="$(ECR_STABLE_REGION)" \
-		REGISTRY="$(ECR_PUBLIC_REGISTRY)"
+		REGISTRY="$(ECR_STABLE_REGISTRY)"
 
 #################################################################################
 # Crane helper targets
@@ -353,22 +365,53 @@ promote-ecr-image-ci-to-rc:
 promote-ecr-image-rc-to-stable:
 	@$(MAKE) _promote-image-rc-to-stable \
 		SRC_REGISTRY="$(ECR_RC_REGISTRY)" \
-		DST_REGISTRY="$(ECR_PUBLIC_REGISTRY)" \
+		DST_REGISTRY="$(ECR_STABLE_REGISTRY)" \
 		CONTAINER_REPO_RC="$(ECR_RC_REPO)" \
 		CONTAINER_REPO_STABLE="$(ECR_STABLE_REPO)"
+
+.PHONY: create-ecr-tags-rc
+create-ecr-tags-rc:
+	@$(MAKE) _create-tags REPO="$(ECR_RC_URI)"
+
+.PHONY: create-ecr-tags-stable
+create-ecr-tags-stable:
+	@$(MAKE) _create-tags REPO="$(ECR_STABLE_URI)"
 
 #################################################################################
 # Docker Hub promotion targets
 #################################################################################
 
-# Copies an image from ECR stable to Docker Hub stable.
-.PHONY: copy-ecr-image-to-dh
-copy-ecr-image-to-dh:
-	@$(MAKE) _crane-copy \
-		SRC_IMAGE="$(ECR_PUBLIC_REGISTRY)/$(CONTAINER_REPO_STABLE):$(TAG)" \
-		DST_IMAGE="$(DH_REGISTRY)/$(CONTAINER_REPO_STABLE):$(TAG)"
-		SRC_REGISTRY="$(DH_REGISTRY)" \
-		DST_REGISTRY="$(DH_REGISTRY)"
+# Promotes an image from ci-builds to release-candidates. The CI repository is
+# not used in DH so the promotion happens from the ci-builds repository in ECR
+# to the release-candidates repository in DH.
+.PHONY: promote-dh-image-ci-to-rc
+promote-dh-image-ci-to-rc:
+	@$(MAKE) _promote-image-ci-to-rc \
+		SRC_REGISTRY="$(ECR_CI_REGISTRY)" \
+		DST_REGISTRY="$(DH_RC_REGISTRY)" \
+		CONTAINER_REPO_CI="$(ECR_CI_REPO)" \
+		CONTAINER_REPO_RC="$(DH_RC_REPO)"
+
+# Promotes an image from release-candidates to stable.
+.PHONY: promote-dh-image-rc-to-stable
+promote-dh-image-rc-to-stable:
+	@$(MAKE) _promote-image-rc-to-stable \
+		SRC_REGISTRY="$(DH_RC_REGISTRY)" \
+		DST_REGISTRY="$(DH_STABLE_REGISTRY)" \
+		CONTAINER_REPO_RC="$(DH_RC_REPO)" \
+		CONTAINER_REPO_STABLE="$(DH_STABLE_REPO)"
+
+.PHONY: create-dh-tags-rc
+create-dh-tags-rc:
+	@$(MAKE) _create-tags REPO="$(DH_RC_URI)"
+
+.PHONY: create-dh-tags-stable
+create-dh-tags-stable:
+	@$(MAKE) _create-tags REPO="$(DH_STABLE_URI)"
+
+#################################################################################
+# General promotion targets
+#################################################################################
 
 # Promotes all images for a build from ci-builds to release-candidates. This
 # includes the main image and any additional images with suffixes like -fips,
@@ -379,10 +422,24 @@ promote-images-ci-to-rc:
 	@$(MAKE) promote-ecr-image-ci-to-rc TAG_SUFFIX="-fips"
 	@$(MAKE) promote-ecr-image-ci-to-rc TAG_SUFFIX="-ubi"
 	@$(MAKE) promote-ecr-image-ci-to-rc TAG_SUFFIX="-ubi-fips"
+	@$(MAKE) promote-dh-image-ci-to-rc
+	@$(MAKE) promote-dh-image-ci-to-rc TAG_SUFFIX="-fips"
+	@$(MAKE) promote-dh-image-ci-to-rc TAG_SUFFIX="-ubi"
+	@$(MAKE) promote-dh-image-ci-to-rc TAG_SUFFIX="-ubi-fips"
 
-.PHONY: create-ecr-tags-rc
-create-ecr-tags-rc:
-	@$(MAKE) _create-tags REPO="$(ECR_RC_URI)"
+# Promotes all images for a build from release-candidates to stable. This
+# includes the main image and any additional images with suffixes like -fips,
+# -ubi, and -ubi-fips.
+.PHONY: promote-images-rc-to-stable
+promote-images-rc-to-stable:
+	@$(MAKE) promote-ecr-image-rc-to-stable
+	@$(MAKE) promote-ecr-image-rc-to-stable TAG_SUFFIX="-fips"
+	@$(MAKE) promote-ecr-image-rc-to-stable TAG_SUFFIX="-ubi"
+	@$(MAKE) promote-ecr-image-rc-to-stable TAG_SUFFIX="-ubi-fips"
+	@$(MAKE) promote-dh-image-rc-to-stable
+	@$(MAKE) promote-dh-image-rc-to-stable TAG_SUFFIX="-fips"
+	@$(MAKE) promote-dh-image-rc-to-stable TAG_SUFFIX="-ubi"
+	@$(MAKE) promote-dh-image-rc-to-stable TAG_SUFFIX="-ubi-fips"
 
 .PHONY: create-tags-rc
 create-tags-rc:
@@ -390,6 +447,10 @@ create-tags-rc:
 	@$(MAKE) create-ecr-tags-rc TAG_SUFFIX="-fips"
 	@$(MAKE) create-ecr-tags-rc TAG_SUFFIX="-ubi"
 	@$(MAKE) create-ecr-tags-rc TAG_SUFFIX="-ubi-fips"
+	@$(MAKE) create-dh-tags-rc
+	@$(MAKE) create-dh-tags-rc TAG_SUFFIX="-fips"
+	@$(MAKE) create-dh-tags-rc TAG_SUFFIX="-ubi"
+	@$(MAKE) create-dh-tags-rc TAG_SUFFIX="-ubi-fips"
 
 .PHONY: create-tags-stable
 create-tags-stable:
@@ -397,6 +458,10 @@ create-tags-stable:
 	@$(MAKE) create-ecr-tags-stable TAG_SUFFIX="-fips"
 	@$(MAKE) create-ecr-tags-stable TAG_SUFFIX="-ubi"
 	@$(MAKE) create-ecr-tags-stable TAG_SUFFIX="-ubi-fips"
+	@$(MAKE) create-dh-tags-stable
+	@$(MAKE) create-dh-tags-stable TAG_SUFFIX="-fips"
+	@$(MAKE) create-dh-tags-stable TAG_SUFFIX="-ubi"
+	@$(MAKE) create-dh-tags-stable TAG_SUFFIX="-ubi-fips"
 
 #################################################################################
 # Print targets
