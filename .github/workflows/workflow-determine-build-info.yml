@@ -64,7 +64,7 @@ jobs:
       workflow-id: ${{ steps.workflow.outputs.id }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # Determine the latest successful run of the "Dev builds" workflow for
       # the "main" branch. This is skipped if inputs.workflow_id is set.
