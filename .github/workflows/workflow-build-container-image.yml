@@ -132,6 +132,14 @@ jobs:
           run-id: ${{ inputs.workflow-id }}
           github-token: ${{ github.token }}
 
+      - name: Verify that artifact is a file
+        run: |
+          artifact="${{ steps.platform.outputs.artifact-path }}"
+          if [ ! -f "${artifact}" ]; then
+          echo "Artifact is not a regular file: ${artifact}"
+          exit 1
+          fi
+
       - name: Set image metadata
         id: meta
         uses: docker/metadata-action@v5
