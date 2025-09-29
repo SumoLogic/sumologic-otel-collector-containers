@@ -135,7 +135,7 @@ jobs:
         run: |
           artifacts="${{ steps.platform.outputs.artifacts-path }}"
           old="${{ steps.binary-name.outputs.name-with-platform }}"
-          new="${{ steps.binary-name.outputs.binary }}"
+          new="${{ steps.binary-name.outputs.name }}"
 
           mv "${artifacts}/${old}" "${artifacts}/${new}"
 
