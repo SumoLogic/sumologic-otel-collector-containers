@@ -139,6 +139,15 @@ jobs:
 
           mv "${artifacts}/${old}" "${artifacts}/${new}"
 
+      - name: Verify that artifact is a regular file
+        run: |
+          artifacts="${{ steps.platform.outputs.artifacts-path }}"
+          artifact="${artifacts}/${{ steps.binary-name.outputs.name }}"
+          if [ ! -f "${artifact}" ]; then
+          echo "Artifact is not a regular file: ${artifact}"
+          exit 1
+          fi
+
       - name: Set image metadata
         id: meta
         uses: docker/metadata-action@v5
