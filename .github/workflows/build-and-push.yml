@@ -17,6 +17,7 @@ on:
   push:
     branches:
       - "main"
+      - "dev-build/*"
   workflow_dispatch:
     inputs:
       workflow-id:
