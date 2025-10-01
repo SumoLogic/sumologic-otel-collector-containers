@@ -99,11 +99,10 @@ jobs:
           os="${{ inputs.os }}"
           os_version="${{ inputs.os-version }}"
           arch="${{ inputs.arch }}"
-          binary_name="${{ steps.binary-name.outputs.name }}"
           product="${{ inputs.product }}"
           target="${{ inputs.target }}"
 
-          artifact_path="artifacts/${os}/${arch}/${binary_name}"
+          artifacts_path="artifacts/${os}/${arch}"
 
           manifest="manifest_${product}_${os}_${arch}"
           if [[ "${target}" != "" ]]; then
@@ -119,7 +118,7 @@ jobs:
           {
           echo "name=${os}"
           echo "name-with-os-version=${name_with_os_version}"
-          echo "artifact-path=${artifact_path}"
+          echo "artifacts-path=${artifacts_path}"
           echo "manifest-name=${manifest}"
           } >> "$GITHUB_OUTPUT"
 
@@ -127,10 +126,27 @@ jobs:
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
         with:
           name: ${{ steps.binary-name.outputs.name-with-platform }}
-          path: ${{ steps.platform.outputs.artifact-path }}
+          path: ${{ steps.platform.outputs.artifacts-path }}
           repository: sumologic/sumologic-otel-collector
           run-id: ${{ inputs.workflow-id }}
           github-token: ${{ github.token }}
+
+      - name: Rename otelcol-sumo artifact
+        run: |
+          artifacts="${{ steps.platform.outputs.artifacts-path }}"
+          old="${{ steps.binary-name.outputs.name-with-platform }}"
+          new="${{ steps.binary-name.outputs.name }}"
+
+          mv "${artifacts}/${old}" "${artifacts}/${new}"
+
+      - name: Verify that artifact is a regular file
+        run: |
+          artifacts="${{ steps.platform.outputs.artifacts-path }}"
+          artifact="${artifacts}/${{ steps.binary-name.outputs.name }}"
+          if [ ! -f "${artifact}" ]; then
+          echo "Artifact is not a regular file: ${artifact}"
+          exit 1
+          fi
 
       - name: Set image metadata
         id: meta
@@ -186,6 +202,7 @@ jobs:
         run: echo ${{ steps.buildx.outputs.platforms }}
 
       - name: Login to ECR
+        if: inputs.pull-request == false
         uses: docker/login-action@v3
         with:
           registry: 663229565520.dkr.ecr.us-east-1.amazonaws.com
@@ -193,7 +210,7 @@ jobs:
           password: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: Build (Local)
-        if: inputs.pull-request == 'true'
+        if: inputs.pull-request == true
         id: build-local
         uses: docker/bake-action@v6
         with:
@@ -209,7 +226,7 @@ jobs:
             *.tags=
 
       - name: Build and push (ECR)
-        if: inputs.pull-request != 'true'
+        if: inputs.pull-request == false
         id: build-ecr
         uses: docker/bake-action@v6
         with:
