@@ -451,6 +451,12 @@ promote-dh-image-rc-to-stable:
 		CONTAINER_REPO_RC="$(DH_RC_REPO)" \
 		CONTAINER_REPO_STABLE="$(DH_STABLE_REPO)"
 
+# Promotes an image from ci-builds to test. Both the CI and test repositories
+# are not used in DH so this is a no-op for now.
+.PHONY: promote-dh-image-ci-to-test
+promote-dh-image-ci-to-test:
+	@echo "promotion from ci-builds to test is not implemented for Docker Hub"
+
 .PHONY: create-dh-tags-rc
 create-dh-tags-rc:
 	@$(MAKE) _create-tags REPO="$(DH_RC_URI)"
