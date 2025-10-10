@@ -11,8 +11,8 @@ on:
     inputs:
       workflow-id:
         description: |
-          Workflow Run ID from this repository that was promoted to testing-a
-          and needs to be rolled back.
+          Workflow Run ID from this repository that was promoted to test and
+          needs to be rolled back.
         required: true
         type: string
 

@@ -31,7 +31,7 @@ ECR_RC_URI ?= $(ECR_RC_REGISTRY)/$(ECR_RC_REPO)
 ECR_TEST_ID ?= 663229565520
 ECR_TEST_REGION ?= us-east-1
 ECR_TEST_REGISTRY ?= $(ECR_TEST_ID).dkr.ecr.$(ECR_TEST_REGION).amazonaws.com
-ECR_TEST_REPO ?= sumologic/sumologic-otel-collector-testing-a
+ECR_TEST_REPO ?= sumologic/sumologic-otel-collector-test
 ECR_TEST_URI ?= $(ECR_TEST_REGISTRY)/$(ECR_TEST_REPO)
 
 ECR_STABLE_REGION ?= us-east-1
@@ -348,7 +348,7 @@ _promote-image-rc-to-stable:
 
 ## _promote-image-ci-to-test
 #
-# Description: Promotes an image from ci-builds to testing-a.
+# Description: Promotes an image from ci-builds to test.
 #
 # Required Variables:
 #   SRC_REGISTRY
@@ -406,7 +406,7 @@ promote-ecr-image-rc-to-stable:
 		CONTAINER_REPO_RC="$(ECR_RC_REPO)" \
 		CONTAINER_REPO_STABLE="$(ECR_STABLE_REPO)"
 
-# Promotes an image from ci-builds to testing-a.
+# Promotes an image from ci-builds to test.
 .PHONY: promote-ecr-image-ci-to-test
 promote-ecr-image-ci-to-test:
 	@$(MAKE) _promote-image-ci-to-test \
@@ -495,9 +495,8 @@ promote-images-rc-to-stable:
 	@$(MAKE) promote-dh-image-rc-to-stable TAG_SUFFIX="-ubi"
 	@$(MAKE) promote-dh-image-rc-to-stable TAG_SUFFIX="-ubi-fips"
 
-# Promotes all images for a build from ci-builds to testing-a. This includes
-# the main image and any additional images with suffixes like -fips, -ubi, and
-# -ubi-fips.
+# Promotes all images for a build from ci-builds to test. This includes the main
+# image and any additional images with suffixes like -fips, -ubi, and -ubi-fips.
 .PHONY: promote-images-ci-to-test
 promote-images-ci-to-test:
 	@$(MAKE) promote-ecr-image-ci-to-test

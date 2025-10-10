@@ -97,8 +97,8 @@ jobs:
             ecr_repo="663229565520.dkr.ecr.us-east-1.amazonaws.com/sumologic/sumologic-otel-collector-release-candidates"
             dh_repo="docker.io/sumologic/sumologic-otel-collector-release-candidates"
           elif [ "$channel" = "test" ]; then
-            ecr_repo="663229565520.dkr.ecr.us-east-1.amazonaws.com/sumologic/sumologic-otel-collector-testing-a"
-            dh_repo="docker.io/sumologic/sumologic-otel-collector-testing-a"
+            ecr_repo="663229565520.dkr.ecr.us-east-1.amazonaws.com/sumologic/sumologic-otel-collector-test"
+            dh_repo="docker.io/sumologic/sumologic-otel-collector-test"
           else
             echo "Invalid channel: ${channel}"
             exit 1
