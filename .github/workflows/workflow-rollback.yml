@@ -1,0 +1,289 @@
+#################################################################################
+# A reusable workflow to rollback images & indexes from a channel for a given
+# workflow run.
+#################################################################################
+
+name: Workflow - Rollback
+
+on:
+  workflow_call:
+    inputs:
+      channel:
+        description: |
+          The channel to rollback images from. Valid values are:
+          - stable
+          - rc
+          - test
+        type: string
+      workflow-id:
+        description: |
+          Workflow Run ID from this repository that was promoted and needs to be
+          rolled back.
+        required: true
+        type: string
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  rollback:
+    name: Rollback
+    runs-on: ubuntu-24.04
+    env:
+      MAKEFLAGS: --no-print-directory
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Add GOPATH bin to PATH
+        run: echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Verify channels
+        run: |
+          channel="${{ inputs.channel }}"
+
+          if [ "$channel" = "rc" ]; then
+            exit 0
+          fi
+
+          if [ "$channel" = "stable" ]; then
+            exit 0
+          fi
+
+          if [ "$channel" = "test" ]; then
+            exit 0
+          fi
+
+          echo "Unsupported channels combination: ${src} -> ${dst}"
+          exit 1
+
+      - name: Login to ECR (Private)
+        uses: docker/login-action@v3
+        with:
+          registry: 663229565520.dkr.ecr.us-east-1.amazonaws.com
+          username: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          password: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Login to ECR (Public)
+        if: ${{ inputs.channel == 'stable' }}
+        uses: docker/login-action@v3
+        with:
+          registry: public.ecr.aws
+          username: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          password: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKERHUB_LOGIN }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Install crane
+        run: make install-crane
+
+      - name: Get repository URIs
+        id: repo-info
+        run: |
+          channel="${{ inputs.channel }}"
+
+          if [ "$channel" = "stable" ]; then
+            ecr_repo="public.ecr.aws/sumologic/sumologic-otel-collector"
+            dh_repo="docker.io/sumologic/sumologic-otel-collector"
+          elif [ "$channel" = "rc" ]; then
+            ecr_repo="663229565520.dkr.ecr.us-east-1.amazonaws.com/sumologic/sumologic-otel-collector-release-candidates"
+            dh_repo="docker.io/sumologic/sumologic-otel-collector-release-candidates"
+          elif [ "$channel" = "test" ]; then
+            ecr_repo="663229565520.dkr.ecr.us-east-1.amazonaws.com/sumologic/sumologic-otel-collector-testing-a"
+            dh_repo="docker.io/sumologic/sumologic-otel-collector-testing-a"
+          else
+            echo "Invalid channel: ${channel}"
+            exit 1
+          fi
+
+          echo "ecr-repo=${ecr_repo}" >> "$GITHUB_OUTPUT"
+          echo "dh-repo=${dh_repo}" >> "$GITHUB_OUTPUT"
+
+      - name: Get run info for current workflow
+        id: current-run-info
+        run: |
+          workflow_id="${{ inputs.workflow-id }}"
+
+          # Extract metadata from the workflow run
+          gh api "/repos/${{ github.repository }}/actions/runs/${workflow_id}" \
+            --jq '{git_sha: .head_sha}' > run_info.json
+
+          git_sha=$(jq -r '.git_sha' run_info.json)
+
+          echo "git-sha=${git_sha}" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Get tags to remove
+        id: get-tags
+        env:
+          WORKFLOW_ID: ${{ inputs.workflow-id }}
+          GIT_SHA: ${{ steps.current-run-info.outputs.git-sha }}
+        run: |
+          # Tags that should be removed (workflow-specific and SHA tags)
+          tags_to_remove="${WORKFLOW_ID} ${WORKFLOW_ID}-fips ${WORKFLOW_ID}-ubi ${WORKFLOW_ID}-ubi-fips ${GIT_SHA} ${GIT_SHA}-fips ${GIT_SHA}-ubi ${GIT_SHA}-ubi-fips"
+
+          echo "tags-to-remove=${tags_to_remove}" >> "$GITHUB_OUTPUT"
+
+      - name: Get previous image digests (ECR)
+        id: previous-digests-ecr
+        env:
+          REPO: ${{ steps.repo-info.outputs.ecr-repo }}
+          WORKFLOW_ID: ${{ inputs.workflow-id }}
+        run: |
+          for variant in "" "-fips" "-ubi" "-ubi-fips"; do
+            tag="latest${variant}"
+            current_tag="${WORKFLOW_ID}${variant}"
+
+            # Get all tags for the repo
+            crane ls "${REPO}" > all_tags.txt
+
+            # Get the digest of the current promoted image
+            current_digest=$(crane digest "${REPO}:${current_tag}" 2>/dev/null || echo "")
+
+            if [ -z "$current_digest" ]; then
+              echo "Warning: Could not find ECR image for tag ${current_tag}"
+              continue
+            fi
+
+            # Find a previous workflow ID tag that points to a different digest
+            previous_digest=""
+            while IFS= read -r candidate_tag; do
+              # Skip if it's one of the tags from the current workflow
+              if echo "$candidate_tag" | grep -qE "^${WORKFLOW_ID}"; then
+                continue
+              fi
+
+              # Check if this tag looks like a workflow ID (numeric)
+              if echo "$candidate_tag" | grep -qE "^[0-9]+${variant}\$"; then
+                candidate_digest=$(crane digest "${REPO}:${candidate_tag}" 2>/dev/null || echo "")
+
+                if [ -n "$candidate_digest" ] && [ "$candidate_digest" != "$current_digest" ]; then
+                  previous_digest="$candidate_digest"
+                  previous_tag="$candidate_tag"
+                  break
+                fi
+              fi
+            done < <(sort -rn all_tags.txt)
+
+            if [ -z "$previous_digest" ]; then
+              echo "Error: Could not find previous ECR image for variant ${variant}"
+              exit 1
+            fi
+
+            # Store the previous digest for this variant
+            variant_key=$(echo "$variant" | sed 's/-/_/g' | sed 's/^_//')
+            if [ -z "$variant_key" ]; then
+              variant_key="base"
+            fi
+
+            echo "previous_digest_${variant_key}=${previous_digest}" >> "$GITHUB_OUTPUT"
+            echo "Found previous ECR digest for ${tag}: ${previous_digest} (from ${previous_tag})"
+          done
+
+      - name: Get previous image digests (Docker Hub)
+        id: previous-digests-dh
+        env:
+          REPO: ${{ steps.repo-info.outputs.dh-repo }}
+          WORKFLOW_ID: ${{ inputs.workflow-id }}
+        run: |
+          for variant in "" "-fips" "-ubi" "-ubi-fips"; do
+            tag="latest${variant}"
+            current_tag="${WORKFLOW_ID}${variant}"
+
+            # Get all tags for the repo
+            crane ls "${REPO}" > all_tags.txt
+
+            # Get the digest of the current promoted image
+            current_digest=$(crane digest "${REPO}:${current_tag}" 2>/dev/null || echo "")
+
+            if [ -z "$current_digest" ]; then
+              echo "Warning: Could not find Docker Hub image for tag ${current_tag}"
+              continue
+            fi
+
+            # Find a previous workflow ID tag that points to a different digest
+            previous_digest=""
+            while IFS= read -r candidate_tag; do
+              # Skip if it's one of the tags from the current workflow
+              if echo "$candidate_tag" | grep -qE "^${WORKFLOW_ID}"; then
+                continue
+              fi
+
+              # Check if this tag looks like a workflow ID (numeric)
+              if echo "$candidate_tag" | grep -qE "^[0-9]+${variant}\$"; then
+                candidate_digest=$(crane digest "${REPO}:${candidate_tag}" 2>/dev/null || echo "")
+
+                if [ -n "$candidate_digest" ] && [ "$candidate_digest" != "$current_digest" ]; then
+                  previous_digest="$candidate_digest"
+                  previous_tag="$candidate_tag"
+                  break
+                fi
+              fi
+            done < <(sort -rn all_tags.txt)
+
+            if [ -z "$previous_digest" ]; then
+              echo "Error: Could not find previous Docker Hub image for variant ${variant}"
+              exit 1
+            fi
+
+            # Store the previous digest for this variant
+            variant_key=$(echo "$variant" | sed 's/-/_/g' | sed 's/^_//')
+            if [ -z "$variant_key" ]; then
+              variant_key="base"
+            fi
+
+            echo "previous_digest_${variant_key}=${previous_digest}" >> "$GITHUB_OUTPUT"
+            echo "Found previous Docker Hub digest for ${tag}: ${previous_digest} (from ${previous_tag})"
+          done
+
+      - name: Relink semantic tags (ECR)
+        env:
+          REPO: ${{ steps.repo-info.outputs.ecr-repo }}
+          PREVIOUS_DIGEST_BASE: ${{ steps.previous-digests-ecr.outputs.previous_digest_base }}
+          PREVIOUS_DIGEST_FIPS: ${{ steps.previous-digests-ecr.outputs.previous_digest_fips }}
+          PREVIOUS_DIGEST_UBI: ${{ steps.previous-digests-ecr.outputs.previous_digest_ubi }}
+          PREVIOUS_DIGEST_UBI_FIPS: ${{ steps.previous-digests-ecr.outputs.previous_digest_ubi_fips }}
+        run: |
+          crane tag "${REPO}@${PREVIOUS_DIGEST_BASE}" latest
+          crane tag "${REPO}@${PREVIOUS_DIGEST_FIPS}" latest-fips
+          crane tag "${REPO}@${PREVIOUS_DIGEST_UBI}" latest-ubi
+          crane tag "${REPO}@${PREVIOUS_DIGEST_UBI_FIPS}" latest-ubi-fips
+
+      - name: Relink semantic tags (Docker Hub)
+        env:
+          REPO: ${{ steps.repo-info.outputs.dh-repo }}
+          PREVIOUS_DIGEST_BASE: ${{ steps.previous-digests-dh.outputs.previous_digest_base }}
+          PREVIOUS_DIGEST_FIPS: ${{ steps.previous-digests-dh.outputs.previous_digest_fips }}
+          PREVIOUS_DIGEST_UBI: ${{ steps.previous-digests-dh.outputs.previous_digest_ubi }}
+          PREVIOUS_DIGEST_UBI_FIPS: ${{ steps.previous-digests-dh.outputs.previous_digest_ubi_fips }}
+        run: |
+          crane tag "${REPO}@${PREVIOUS_DIGEST_BASE}" latest
+          crane tag "${REPO}@${PREVIOUS_DIGEST_FIPS}" latest-fips
+          crane tag "${REPO}@${PREVIOUS_DIGEST_UBI}" latest-ubi
+          crane tag "${REPO}@${PREVIOUS_DIGEST_UBI_FIPS}" latest-ubi-fips
+
+      - name: Remove workflow-specific tags (ECR)
+        env:
+          REPO: ${{ steps.repo-info.outputs.ecr-repo }}
+          TAGS_TO_REMOVE: ${{ steps.get-tags.outputs.tags-to-remove }}
+        run: |
+          for tag in $TAGS_TO_REMOVE; do
+            echo "Removing ECR tag: ${tag}"
+            crane delete "${REPO}:${tag}" 2>/dev/null || echo "Tag ${tag} not found, skipping"
+          done
+
+      - name: Remove workflow-specific tags (Docker Hub)
+        env:
+          REPO: ${{ steps.repo-info.outputs.dh-repo }}
+          TAGS_TO_REMOVE: ${{ steps.get-tags.outputs.tags-to-remove }}
+        run: |
+          for tag in $TAGS_TO_REMOVE; do
+            echo "Removing Docker Hub tag: ${tag}"
+            crane delete "${REPO}:${tag}" 2>/dev/null || echo "Tag ${tag} not found, skipping"
+          done

@@ -28,6 +28,12 @@ ECR_RC_REGISTRY ?= $(ECR_RC_ID).dkr.ecr.$(ECR_RC_REGION).amazonaws.com
 ECR_RC_REPO ?= sumologic/sumologic-otel-collector-release-candidates
 ECR_RC_URI ?= $(ECR_RC_REGISTRY)/$(ECR_RC_REPO)
 
+ECR_TEST_ID ?= 663229565520
+ECR_TEST_REGION ?= us-east-1
+ECR_TEST_REGISTRY ?= $(ECR_TEST_ID).dkr.ecr.$(ECR_TEST_REGION).amazonaws.com
+ECR_TEST_REPO ?= sumologic/sumologic-otel-collector-testing-a
+ECR_TEST_URI ?= $(ECR_TEST_REGISTRY)/$(ECR_TEST_REPO)
+
 ECR_STABLE_REGION ?= us-east-1
 ECR_STABLE_REGISTRY ?= public.ecr.aws
 ECR_STABLE_REPO ?= sumologic/sumologic-otel-collector
@@ -104,6 +110,13 @@ login-ecr-rc:
 		ECR_SUBCMD="ecr" \
 		AWS_REGION="$(ECR_RC_REGION)" \
 		REGISTRY="$(ECR_RC_REGISTRY)"
+
+.PHONY: login-ecr-test
+login-ecr-rc:
+	@$(MAKE) _login-ecr \
+		ECR_SUBCMD="ecr" \
+		AWS_REGION="$(ECR_TEST_REGION)" \
+		REGISTRY="$(ECR_TEST_REGISTRY)"
 
 .PHONY: login-ecr-stable
 login-ecr-stable:
@@ -333,6 +346,30 @@ _promote-image-rc-to-stable:
 		DST_REGISTRY="$(DST_REGISTRY)" \
 		DST_REPO="$(CONTAINER_REPO_STABLE)"
 
+## _promote-image-ci-to-test
+#
+# Description: Promotes an image from ci-builds to testing-a.
+#
+# Required Variables:
+#   SRC_REGISTRY
+#     Registry where the source repository is located.
+#
+#   CONTAINER_REPO_CI
+#     Repository where the source image is located.
+#
+#   DST_REGISTRY
+#     Registry where the destination repo is located.
+#
+#   CONTAINER_REPO_RC
+#     Repository where the destination image will be copied to.
+.PHONY: _promote-image-ci-to-test
+_promote-image-ci-to-test:
+	@$(MAKE) _promote-container-image \
+		SRC_REGISTRY="$(SRC_REGISTRY)" \
+		SRC_REPO="$(CONTAINER_REPO_CI)" \
+		DST_REGISTRY="$(DST_REGISTRY)" \
+		DST_REPO="$(CONTAINER_REPO_TEST)"
+
 #################################################################################
 # Image removal helper targets
 #
@@ -369,6 +406,15 @@ promote-ecr-image-rc-to-stable:
 		CONTAINER_REPO_RC="$(ECR_RC_REPO)" \
 		CONTAINER_REPO_STABLE="$(ECR_STABLE_REPO)"
 
+# Promotes an image from ci-builds to testing-a.
+.PHONY: promote-ecr-image-ci-to-test
+promote-ecr-image-ci-to-test:
+	@$(MAKE) _promote-image-ci-to-test \
+		SRC_REGISTRY="$(ECR_CI_REGISTRY)" \
+		DST_REGISTRY="$(ECR_TEST_REGISTRY)" \
+		CONTAINER_REPO_CI="$(ECR_CI_REPO)" \
+		CONTAINER_REPO_RC="$(ECR_TEST_REPO)"
+
 .PHONY: create-ecr-tags-rc
 create-ecr-tags-rc:
 	@$(MAKE) _create-tags REPO="$(ECR_RC_URI)"
@@ -376,6 +422,10 @@ create-ecr-tags-rc:
 .PHONY: create-ecr-tags-stable
 create-ecr-tags-stable:
 	@$(MAKE) _create-tags REPO="$(ECR_STABLE_URI)"
+
+.PHONY: create-ecr-tags-test
+create-ecr-tags-test:
+	@$(MAKE) _create-tags REPO="$(ECR_TEST_URI)"
 
 #################################################################################
 # Docker Hub promotion targets
@@ -409,6 +459,10 @@ create-dh-tags-rc:
 create-dh-tags-stable:
 	@$(MAKE) _create-tags REPO="$(DH_STABLE_URI)"
 
+.PHONY: create-dh-tags-test
+create-dh-tags-test:
+	@$(MAKE) _create-tags REPO="$(DH_TEST_URI)"
+
 #################################################################################
 # General promotion targets
 #################################################################################
@@ -441,6 +495,20 @@ promote-images-rc-to-stable:
 	@$(MAKE) promote-dh-image-rc-to-stable TAG_SUFFIX="-ubi"
 	@$(MAKE) promote-dh-image-rc-to-stable TAG_SUFFIX="-ubi-fips"
 
+# Promotes all images for a build from ci-builds to testing-a. This includes
+# the main image and any additional images with suffixes like -fips, -ubi, and
+# -ubi-fips.
+.PHONY: promote-images-ci-to-test
+promote-images-ci-to-test:
+	@$(MAKE) promote-ecr-image-ci-to-test
+	@$(MAKE) promote-ecr-image-ci-to-test TAG_SUFFIX="-fips"
+	@$(MAKE) promote-ecr-image-ci-to-test TAG_SUFFIX="-ubi"
+	@$(MAKE) promote-ecr-image-ci-to-test TAG_SUFFIX="-ubi-fips"
+	@$(MAKE) promote-dh-image-ci-to-test
+	@$(MAKE) promote-dh-image-ci-to-test TAG_SUFFIX="-fips"
+	@$(MAKE) promote-dh-image-ci-to-test TAG_SUFFIX="-ubi"
+	@$(MAKE) promote-dh-image-ci-to-test TAG_SUFFIX="-ubi-fips"
+
 .PHONY: create-tags-rc
 create-tags-rc:
 	@$(MAKE) create-ecr-tags-rc
@@ -462,6 +530,17 @@ create-tags-stable:
 	@$(MAKE) create-dh-tags-stable TAG_SUFFIX="-fips"
 	@$(MAKE) create-dh-tags-stable TAG_SUFFIX="-ubi"
 	@$(MAKE) create-dh-tags-stable TAG_SUFFIX="-ubi-fips"
+
+.PHONY: create-tags-test
+create-tags-test:
+	@$(MAKE) create-ecr-tags-test
+	@$(MAKE) create-ecr-tags-test TAG_SUFFIX="-fips"
+	@$(MAKE) create-ecr-tags-test TAG_SUFFIX="-ubi"
+	@$(MAKE) create-ecr-tags-test TAG_SUFFIX="-ubi-fips"
+	@$(MAKE) create-dh-tags-test
+	@$(MAKE) create-dh-tags-test TAG_SUFFIX="-fips"
+	@$(MAKE) create-dh-tags-test TAG_SUFFIX="-ubi"
+	@$(MAKE) create-dh-tags-test TAG_SUFFIX="-ubi-fips"
 
 #################################################################################
 # Print targets
