@@ -18,6 +18,7 @@ on:
           The destination channel to promote images to. Valid values are:
           - rc
           - stable
+          - test
         type: string
       git-sha:
         description: The Git SHA used to build the container images.
@@ -44,6 +45,7 @@ on:
           The source channel to promote images from. Valid values are:
           - ci
           - rc
+          - test
         type: string
       workflow-id:
         description: |

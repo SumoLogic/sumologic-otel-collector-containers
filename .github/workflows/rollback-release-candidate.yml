@@ -1,0 +1,30 @@
+name: Rollback release candidate
+
+permissions:
+  contents: read
+
+run-name: >
+  ${{ format('Rollback Release Candidate: Workflow {0}', inputs.workflow-id) }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      workflow-id:
+        description: |
+          Workflow Run ID from this repository that was promoted to release
+          candidates and needs to be rolled back.
+        required: true
+        type: string
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  rollback:
+    name: Container images
+    uses: ./.github/workflows/workflow-rollback.yml
+    with:
+      channel: rc
+      workflow-id: ${{ inputs.workflow-id }}
+    secrets: inherit
