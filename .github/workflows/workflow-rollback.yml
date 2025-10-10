@@ -5,6 +5,9 @@
 
 name: Workflow - Rollback
 
+permissions:
+  contents: read
+
 on:
   workflow_call:
     inputs:

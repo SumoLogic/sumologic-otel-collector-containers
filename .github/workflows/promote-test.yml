@@ -3,6 +3,9 @@ name: Publish test
 run-name: >
   ${{ format('Publish Test for Workflow: {0}', inputs.workflow-id) }}
 
+permissions:
+  contents: read
+
 on:
   workflow_dispatch:
     inputs:
