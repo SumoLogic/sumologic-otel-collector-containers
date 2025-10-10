@@ -467,7 +467,7 @@ create-dh-tags-stable:
 
 .PHONY: create-dh-tags-test
 create-dh-tags-test:
-	@$(MAKE) _create-tags REPO="$(DH_TEST_URI)"
+	@echo "tag creation is not implemented for the test repo in Docker Hub"
 
 #################################################################################
 # General promotion targets
