@@ -112,7 +112,7 @@ login-ecr-rc:
 		REGISTRY="$(ECR_RC_REGISTRY)"
 
 .PHONY: login-ecr-test
-login-ecr-rc:
+login-ecr-test:
 	@$(MAKE) _login-ecr \
 		ECR_SUBCMD="ecr" \
 		AWS_REGION="$(ECR_TEST_REGION)" \
@@ -413,7 +413,7 @@ promote-ecr-image-ci-to-test:
 		SRC_REGISTRY="$(ECR_CI_REGISTRY)" \
 		DST_REGISTRY="$(ECR_TEST_REGISTRY)" \
 		CONTAINER_REPO_CI="$(ECR_CI_REPO)" \
-		CONTAINER_REPO_RC="$(ECR_TEST_REPO)"
+		CONTAINER_REPO_TEST="$(ECR_TEST_REPO)"
 
 .PHONY: create-ecr-tags-rc
 create-ecr-tags-rc:
