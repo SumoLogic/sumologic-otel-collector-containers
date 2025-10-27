@@ -57,7 +57,7 @@ jobs:
             exit 0
           fi
 
-          echo "Unsupported channels combination: ${src} -> ${dst}"
+          echo "Unsupported channel: ${channel}"
           exit 1
 
       - name: Login to ECR (Private)
