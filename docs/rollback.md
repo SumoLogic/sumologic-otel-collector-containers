@@ -146,3 +146,44 @@ After a rollback completes:
    crane digest <repository>:latest
    ```
 3. **Test the rolled-back images** in your environment to confirm they work as expected
+
+## Marking GitHub Release as Deprecated
+
+When rolling back a stable release, you should also deprecate the corresponding GitHub Release to warn users not to use the problematic version.
+
+### Convert Release to Pre-Release
+
+1. Navigate to the **Releases** page in the GitHub repository
+2. Find the release that corresponds to the rolled-back version
+3. Click **Edit** on the release
+4. Check the **"Set as a pre-release"** checkbox
+5. Click **"Update release"**
+
+This will mark the release with a "Pre-release" badge, signaling to users that it should not be used in production.
+
+### Add Deprecation Warning
+
+Update the release notes to include a clear deprecation warning at the top:
+
+1. Edit the release notes
+2. Add a warning section at the beginning explaining why the release was deprecated
+3. Provide links to relevant issues or pull requests if applicable
+
+Example deprecation notice:
+
+```markdown
+> **WARNING: This release has been deprecated**
+>
+> This release has been **deprecated** due to [brief description of the issue].
+> Please use the previous stable release or wait for the next release.
+>
+> For more information, see [link to issue/PR].
+```
+
+**Real example** from [v0.133.0-2274](https://github.com/SumoLogic/sumologic-otel-collector-packaging/releases/tag/v0.133.0-2274):
+
+```markdown
+> This release has been **deprecated** due to upstream issues with the
+> `gosnowflake` dependency, which required a downgrade as mentioned in
+> open-telemetry/opentelemetry-collector-contrib#42607.
+```
