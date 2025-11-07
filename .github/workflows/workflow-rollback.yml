@@ -57,7 +57,7 @@ jobs:
             exit 0
           fi
 
-          echo "Unsupported channels combination: ${src} -> ${dst}"
+          echo "Unsupported channel: ${channel}"
           exit 1
 
       - name: Login to ECR (Private)
@@ -97,8 +97,8 @@ jobs:
             ecr_repo="663229565520.dkr.ecr.us-east-1.amazonaws.com/sumologic/sumologic-otel-collector-release-candidates"
             dh_repo="docker.io/sumologic/sumologic-otel-collector-release-candidates"
           elif [ "$channel" = "test" ]; then
-            ecr_repo="663229565520.dkr.ecr.us-east-1.amazonaws.com/sumologic/sumologic-otel-collector-testing-a"
-            dh_repo="docker.io/sumologic/sumologic-otel-collector-testing-a"
+            ecr_repo="663229565520.dkr.ecr.us-east-1.amazonaws.com/sumologic/sumologic-otel-collector-test"
+            dh_repo=""
           else
             echo "Invalid channel: ${channel}"
             exit 1
@@ -134,6 +134,7 @@ jobs:
           echo "tags-to-remove=${tags_to_remove}" >> "$GITHUB_OUTPUT"
 
       - name: Get previous image digests (ECR)
+        if: steps.repo-info.outputs.ecr-repo != ''
         id: previous-digests-ecr
         env:
           REPO: ${{ steps.repo-info.outputs.ecr-repo }}
@@ -190,6 +191,7 @@ jobs:
           done
 
       - name: Get previous image digests (Docker Hub)
+        if: steps.repo-info.outputs.dh-repo != ''
         id: previous-digests-dh
         env:
           REPO: ${{ steps.repo-info.outputs.dh-repo }}
@@ -246,6 +248,7 @@ jobs:
           done
 
       - name: Relink semantic tags (ECR)
+        if: steps.repo-info.outputs.ecr-repo != ''
         env:
           REPO: ${{ steps.repo-info.outputs.ecr-repo }}
           PREVIOUS_DIGEST_BASE: ${{ steps.previous-digests-ecr.outputs.previous_digest_base }}
@@ -259,6 +262,7 @@ jobs:
           crane tag "${REPO}@${PREVIOUS_DIGEST_UBI_FIPS}" latest-ubi-fips
 
       - name: Relink semantic tags (Docker Hub)
+        if: steps.repo-info.outputs.dh-repo != ''
         env:
           REPO: ${{ steps.repo-info.outputs.dh-repo }}
           PREVIOUS_DIGEST_BASE: ${{ steps.previous-digests-dh.outputs.previous_digest_base }}
@@ -272,6 +276,7 @@ jobs:
           crane tag "${REPO}@${PREVIOUS_DIGEST_UBI_FIPS}" latest-ubi-fips
 
       - name: Remove workflow-specific tags (ECR)
+        if: steps.repo-info.outputs.ecr-repo != ''
         env:
           REPO: ${{ steps.repo-info.outputs.ecr-repo }}
           TAGS_TO_REMOVE: ${{ steps.get-tags.outputs.tags-to-remove }}
@@ -282,6 +287,7 @@ jobs:
           done
 
       - name: Remove workflow-specific tags (Docker Hub)
+        if: steps.repo-info.outputs.dh-repo != ''
         env:
           REPO: ${{ steps.repo-info.outputs.dh-repo }}
           TAGS_TO_REMOVE: ${{ steps.get-tags.outputs.tags-to-remove }}
