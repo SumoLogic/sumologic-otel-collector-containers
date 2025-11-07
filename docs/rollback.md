@@ -70,24 +70,34 @@ Before performing a rollback:
 
 ### Rollback Test Channel
 
-1. Go to the GitHub repository's **Actions** tab
-2. Select the **"Rollback test"** workflow from the left sidebar
-3. Click **"Run workflow"**
-4. Enter the **Workflow Run ID** of the promotion that needs to be rolled back
-5. Click **"Run workflow"** to start the rollback
+1. **Navigate to the workflow:**
+   - Go to https://github.com/SumoLogic/sumologic-otel-collector-containers/actions/workflows/rollback-test.yml
+   - Click "Run workflow"
 
-Example:
-```
-Workflow Run ID: 12345678
-```
+2. **Enter the Workflow Run ID:**
+   - Input the Run ID of the promotion workflow that needs to be rolled back
+     (e.g. `19034289856`)
+   - Click "Run workflow"
+
+3. **Monitor the workflow:**
+   - Container indexes and images will be removed from the test channel
+   - Tag aliases (e.g. `latest`) will point to the previous release
 
 ### Rollback Release Candidate Channel
 
-1. Go to the GitHub repository's **Actions** tab
-2. Select the **"Rollback release candidate"** workflow from the left sidebar
-3. Click **"Run workflow"**
-4. Enter the **Workflow Run ID** of the promotion that needs to be rolled back
-5. Click **"Run workflow"** to start the rollback
+1. **Navigate to the workflow:**
+   - Go to https://github.com/SumoLogic/sumologic-otel-collector-containers/actions/workflows/rollback-release-candidate.yml
+   - Click "Run workflow"
+
+2. **Enter the Workflow Run ID:**
+   - Input the Run ID of the promotion workflow that needs to be rolled back
+     (e.g. `19034289856`)
+   - Click "Run workflow"
+
+3. **Monitor the workflow:**
+   - Container indexes and images will be removed from the release-candidates
+     channel
+   - Tag aliases (e.g. `latest`) will point to the previous release
 
 This will rollback images in both:
 - Private ECR: `663229565520.dkr.ecr.us-east-1.amazonaws.com/sumologic/sumologic-otel-collector-release-candidates`
@@ -95,11 +105,19 @@ This will rollback images in both:
 
 ### Rollback Stable Channel
 
-1. Go to the GitHub repository's **Actions** tab
-2. Select the **"Rollback stable"** workflow from the left sidebar
-3. Click **"Run workflow"**
-4. Enter the **Workflow Run ID** of the release promotion that needs to be rolled back
-5. Click **"Run workflow"** to start the rollback
+1. **Navigate to the workflow:**
+   - Go to https://github.com/SumoLogic/sumologic-otel-collector-containers/actions/workflows/rollback-stable.yml
+   - Click "Run workflow"
+
+2. **Enter the Workflow Run ID:**
+   - Input the Run ID of the promotion workflow that needs to be rolled back
+     (e.g. `19034289856`)
+   - Click "Run workflow"
+
+3. **Monitor the workflow:**
+   - Container indexes and images will be removed from the stable
+     channel
+   - Tag aliases (e.g. `latest`) will point to the previous release
 
 This will rollback images in both:
 - Public ECR: `public.ecr.aws/sumologic/sumologic-otel-collector`
