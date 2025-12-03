@@ -50,7 +50,7 @@ jobs:
       otc-sumo-version: ${{ steps.set-versions.outputs.otc-sumo-version }}
       otc-version: ${{ steps.set-versions.outputs.otc-version }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Output Workflow ID
         run: echo ::notice title=Workflow ID::${{ inputs.workflow-id }}
