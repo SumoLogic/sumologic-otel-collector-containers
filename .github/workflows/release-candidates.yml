@@ -12,6 +12,14 @@ on:
           promotion.
         required: true
         type: string
+  workflow_call:
+    inputs:
+      workflow-id:
+        description: |
+          Workflow Run ID from this repository to fetch artifacts from for this
+          promotion.
+        required: true
+        type: string
 
 defaults:
   run:
