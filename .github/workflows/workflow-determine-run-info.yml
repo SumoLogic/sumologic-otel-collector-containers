@@ -51,13 +51,15 @@ jobs:
       otc-version: ${{ steps.set-versions.outputs.otc-version }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          repository: SumoLogic/sumologic-otel-collector-containers
 
       - name: Output Workflow ID
         run: echo ::notice title=Workflow ID::${{ inputs.workflow-id }}
 
       - name: Output Workflow URL
         run: |
-          repo_url="https://github.com/SumoLogic/sumologic-otel-collector-packaging"
+          repo_url="https://github.com/SumoLogic/sumologic-otel-collector-containers"
           url="${repo_url}/actions/runs/${{ inputs.workflow-id }}"
           echo ::notice title=Workflow URL::${url}
 
@@ -69,6 +71,7 @@ jobs:
           merge-multiple: true
           github-token: ${{ github.token }}
           run-id: ${{ inputs.workflow-id }}
+          repository: SumoLogic/sumologic-otel-collector-containers
 
       - name: Set version outputs
         id: set-versions
@@ -107,7 +110,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           workflow=${{ inputs.workflow-id }}
-          sha="$(gh run view ${workflow} --json headSha -t '{{.headSha}}')"
+          sha="$(gh run view ${workflow} -R SumoLogic/sumologic-otel-collector-containers --json headSha -t '{{.headSha}}')"
           echo "git-sha=$sha" >> "$GITHUB_OUTPUT"
 
       - name: Output Git SHA
