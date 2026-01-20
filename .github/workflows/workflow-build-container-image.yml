@@ -190,7 +190,7 @@ jobs:
 
       - name: Set up QEMU
         if: runner.os != 'Windows'
-        uses: docker/setup-qemu-action@v3.6.0
+        uses: docker/setup-qemu-action@v3.7.0
 
       - name: Set up Buildx
         if: runner.os != 'Windows'
