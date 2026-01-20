@@ -12,6 +12,14 @@ on:
           release.
         required: true
         type: string
+  workflow_call:
+    inputs:
+      workflow-id:
+        description: |
+          Workflow Run ID from this repository to fetch artifacts from for this
+          release.
+        required: true
+        type: string
 
 defaults:
   run:
@@ -57,6 +65,7 @@ jobs:
           github-token: ${{ github.token }}
           run-id: ${{ inputs.workflow-id }}
           pattern: "!*.dockerbuild"
+          repository: SumoLogic/sumologic-otel-collector-containers
 
       - name: List all artifacts
         run: ls -l artifacts/
