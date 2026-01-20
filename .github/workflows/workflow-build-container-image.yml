@@ -76,7 +76,7 @@ jobs:
       }}
     runs-on: ${{ inputs.runs-on }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Workflow URL for sumologic-otel-collector
         run: |
@@ -190,7 +190,7 @@ jobs:
 
       - name: Set up QEMU
         if: runner.os != 'Windows'
-        uses: docker/setup-qemu-action@v3.6.0
+        uses: docker/setup-qemu-action@v3.7.0
 
       - name: Set up Buildx
         if: runner.os != 'Windows'
@@ -266,7 +266,7 @@ jobs:
           target="${{ inputs.target || inputs.product }}"
           jq -c ".[\"$target\"]" metadata-ecr.json | tee "${name}-ecr.json"
 
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         if: steps.manifest.conclusion == 'success'
         with:
           name: ${{ steps.platform.outputs.manifest-name }}-ecr
