@@ -53,6 +53,19 @@ on:
           release.
         required: true
         type: string
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        description: AWS Access Key ID for ECR login
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        description: AWS Secret Access Key for ECR login
+        required: true
+      DOCKERHUB_LOGIN:
+        description: Docker Hub login username
+        required: true
+      DOCKERHUB_PASSWORD:
+        description: Docker Hub login password
+        required: true
 
 defaults:
   run:
