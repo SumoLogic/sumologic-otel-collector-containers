@@ -72,6 +72,8 @@ jobs:
 
       - uses: ncipollo/release-action@v1
         with:
+          owner: SumoLogic
+          repo: sumologic-otel-collector-containers
           name: v${{ needs.determine-run-info.outputs.otc-version }}
           commit: ${{ needs.determine-run-info.outputs.git-sha }}
           tag: v${{ needs.determine-run-info.outputs.otc-version }}
