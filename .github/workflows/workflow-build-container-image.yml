@@ -99,7 +99,7 @@ jobs:
           artifact-name: otelcol-sumo
       
       - name: Setup otelcol-config artifact
-        id: artifact-otelcol-sumo
+        id: artifact-otelcol-config
         uses: ./.github/actions/setup-collector-artifact
         with:
           fips: ${{ inputs.fips }}
