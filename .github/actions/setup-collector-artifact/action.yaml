@@ -62,6 +62,7 @@ runs:
  
     - name: Output platform information
       id: platform
+      shell: bash
       run: |
         os="${{ inputs.os }}"
         os_version="${{ inputs.os-version }}"
@@ -99,6 +100,7 @@ runs:
         github-token: ${{ github.token }}
 
     - name: Rename artifact (i.e otelcol-sumo)
+      shell: bash
       run: |
         artifacts="${{ steps.platform.outputs.artifacts-path }}"
         old="${{ steps.binary-name.outputs.name-with-platform }}"
@@ -107,6 +109,7 @@ runs:
         mv "${artifacts}/${old}" "${artifacts}/${new}"
 
     - name: Verify that artifact is a regular file
+      shell: bash
       run: |
         artifacts="${{ steps.platform.outputs.artifacts-path }}"
         artifact="${artifacts}/${{ steps.binary-name.outputs.name }}"
