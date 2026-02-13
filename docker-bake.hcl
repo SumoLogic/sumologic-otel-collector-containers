@@ -32,6 +32,7 @@ target "_common" {
 target "_common-fips" {
   args = {
     COLLECTOR_BIN = "otelcol-sumo-fips"
+    CONFIG_BIN    = "otelcol-config-fips"
   }
 }
 
