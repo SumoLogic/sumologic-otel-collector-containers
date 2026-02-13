@@ -57,7 +57,7 @@ runs:
       id: binary-name
       with:
         fips: ${{ inputs.fips }}
-        name: otelcol-sumo
+        name: ${{ inputs.artifact-name }}
         platform: ${{ inputs.os }}_${{ inputs.arch }}
  
     - name: Output platform information
@@ -90,7 +90,7 @@ runs:
         echo "manifest-name=${manifest}"
         } >> "$GITHUB_OUTPUT"
 
-    - name: Download otelcol-sumo artifact from workflow
+    - name: Download artifact from workflow
       uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131
       with:
         name: ${{ steps.binary-name.outputs.name-with-platform }}
@@ -99,7 +99,7 @@ runs:
         run-id: ${{ inputs.workflow-id }}
         github-token: ${{ github.token }}
 
-    - name: Rename artifact (i.e otelcol-sumo)
+    - name: Rename artifact
       shell: bash
       run: |
         artifacts="${{ steps.platform.outputs.artifacts-path }}"
