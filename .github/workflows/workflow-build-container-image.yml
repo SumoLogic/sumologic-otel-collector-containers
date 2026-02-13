@@ -100,6 +100,7 @@ jobs:
       
       - name: Setup otelcol-config artifact
         id: artifact-otelcol-config
+        if: inputs.os != 'windows'
         uses: ./.github/actions/setup-collector-artifact
         with:
           fips: ${{ inputs.fips }}
