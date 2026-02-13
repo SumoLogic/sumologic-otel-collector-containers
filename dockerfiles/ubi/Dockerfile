@@ -3,6 +3,7 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal:8.10
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG COLLECTOR_BIN=otelcol-sumo
+ARG CONFIG_BIN=otelcol-config
 
 ENV SUMMARY="UBI based sumologic-otel-collector" \
     DESCRIPTION="Sumo Logic Distribution for OpenTelemetry Collector is a Sumo Logic-supported distribution of the OpenTelemetry Collector. It is a single agent to send logs, metrics and traces to Sumo Logic."
@@ -18,10 +19,12 @@ LABEL name="sumologic-otel-collector" \
 RUN echo "I am running on ${BUILDPLATFORM}, building for ${TARGETPLATFORM}"
 
 COPY artifacts/$TARGETPLATFORM/$COLLECTOR_BIN /otelcol-sumo
+COPY artifacts/$TARGETPLATFORM/$CONFIG_BIN /otelcol-config
 
 # This shouldn't be necessary but sometimes we end up with execution bit not set.
 # ref: https://github.com/open-telemetry/opentelemetry-collector/issues/1317
 RUN chmod 755 /otelcol-sumo
+RUN chmod 755 /otelcol-config
 
 ADD https://raw.githubusercontent.com/SumoLogic/sumologic-otel-collector/main/LICENSE \
     /licenses/LICENSE
