@@ -66,6 +66,8 @@ jobs:
       MAKEFLAGS: --no-print-directory
     steps:
       - uses: actions/checkout@v6
+        with:
+          repository: SumoLogic/sumologic-otel-collector-containers
 
       - name: Add GOPATH bin to PATH
         run: echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
