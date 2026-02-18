@@ -72,7 +72,7 @@ jobs:
 
       - uses: ncipollo/release-action@v1
         with:
-          token: ${{ secrets.GH_CI_TOKEN }}
+          token: ${{ secrets.GH_CI_TOKEN || github.token }}
           owner: SumoLogic
           repo: sumologic-otel-collector-containers
           name: v${{ needs.determine-run-info.outputs.otc-version }}
