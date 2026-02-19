@@ -34,9 +34,7 @@ RUN apk add --no-cache ca-certificates
 
 FROM alpine:3.20.2 AS directories
 RUN mkdir -p /var/cache/otelcol-sumo /etc/otel
-RUN apt-get update \
-    && apt-get install -y curl \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache curl
 RUN mkdir -p /script \
     && curl -sLo /script/install.sh \
        https://raw.githubusercontent.com/SumoLogic/sumologic-otel-collector-packaging/main/install-script/install.sh \
