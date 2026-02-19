@@ -23,8 +23,10 @@ RUN tar czhf otelcolconfig.tar.gz /otelcol-config $(ldd /otelcol-config | grep -
 # extract package to /output so it can be taken as base for scratch image
 # we do not copy archive into scratch image, as it doesn't have tar executable
 # however, we can copy full directory as root (/) to be base file structure for scratch image
-RUN mkdir /output && tar xf /otelcol.tar.gz --directory /output
-RUN mkdir /output && tar xf /otelcol-config.tar.gz --directory /output
+RUN mkdir -p /output \
+    && tar xf /otelcol.tar.gz --directory /output \
+    && tar xf /otelcol-config.tar.gz --directory /output
+
 
 FROM alpine:3.20.2 AS certs
 
