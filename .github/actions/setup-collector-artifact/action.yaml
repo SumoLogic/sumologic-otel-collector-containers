@@ -7,39 +7,33 @@ description: |
 inputs:
   fips:
     description: Build container image using FIPS binary.
-    default: false
-    type: boolean
+    required: false
   arch:
     description: The CPU architecture to build for.
-    type: string
     required: true
   os:
     description: The operating system to build for.
-    type: string
     required: true
   os-version:
     description: The operating system version to build for.
-    type: string
+    required: false
   artifact-name:
     description: The name of the artifact
-    type: string
     required: true
   product:
     description: |
       The product name to build. This allows different bake targets to end
       up in the same multi-platform image.
-    type: string
     required: true
   target:
     description: |
       The bake target to build. The product name will be used as the target
       when target is not set.
-    type: string
+    required: false
   workflow-id:
     description: |
       The ID of the GitHub Actions workflow in sumologic-otel-collector to
       fetch artifacts from.
-    type: string
     required: true
 
 outputs:
