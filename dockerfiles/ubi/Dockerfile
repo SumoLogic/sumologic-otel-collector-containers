@@ -25,7 +25,7 @@ COPY artifacts/$TARGETPLATFORM/$CONFIG_BIN /usr/local/bin/otelcol-config
 # This shouldn't be necessary but sometimes we end up with execution bit not set.
 # ref: https://github.com/open-telemetry/opentelemetry-collector/issues/1317
 RUN chmod 755 /otelcol-sumo
-RUN chmod 755 /otelcol-config
+RUN chmod 755 /usr/local/bin/otelcol-config
 
 ADD https://raw.githubusercontent.com/SumoLogic/sumologic-otel-collector/main/LICENSE \
     /licenses/LICENSE

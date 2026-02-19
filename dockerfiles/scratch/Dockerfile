@@ -27,18 +27,21 @@ RUN mkdir -p /output \
     && tar xf /otelcol.tar.gz --directory /output \
     && tar xf /otelcol-config.tar.gz --directory /output
 
-RUN microdnf update -y \
-    && microdnf install -y curl \
-    && microdnf clean all
-
-
 FROM alpine:3.20.2 AS certs
 
 # hadolint ignore=DL3018
 RUN apk add --no-cache ca-certificates
 
 FROM alpine:3.20.2 AS directories
-RUN mkdir /etc/otel/
+RUN mkdir -p /var/cache/otelcol-sumo /etc/otel
+RUN microdnf update -y \
+    && microdnf install -y curl \
+    && microdnf clean all
+RUN mkdir -p /script \
+    && curl -sLo /script/install.sh \
+       https://raw.githubusercontent.com/SumoLogic/sumologic-otel-collector-packaging/main/install-script/install.sh \
+    && chmod +x /script/install.sh
+
 
 FROM debian:12.6 AS systemd
 
@@ -67,16 +70,10 @@ ENV REMOTELY_MANAGED=false
 COPY --from=systemd /output/ /
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=otelcol /output/ /
-COPY --from=directories --chown=${USER_UID}:${USER_UID} /etc/otel/ /etc/otel/
-COPY /output/otelcol-config /usr/local/bin/
-
-
-RUN mkdir -p /var/cache/otelcol-sumo /etc/otel && \
-    chmod 775 /var/cache/otelcol-sumo /etc/otel
-RUN mkdir -p $HOME \
-    && curl -sLo $HOME/install.sh \
-       https://raw.githubusercontent.com/SumoLogic/sumologic-otel-collector-packaging/main/install-script/install.sh \
-    && chmod +x $HOME/install.sh
+COPY --from=directories /etc/otel/ /etc/otel/
+COPY --from=directories /var/cache/otelcol-sumo/ /var/cache/otelcol-sumo/
+COPY --from=directories /script/ /etc/otel/
+COPY /otelcol-config /usr/local/bin/
 
 ENTRYPOINT ["bash", "-c", "\
 set -e; \
