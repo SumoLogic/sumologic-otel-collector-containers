@@ -172,12 +172,6 @@ jobs:
           registry: 663229565520.dkr.ecr.us-east-1.amazonaws.com
           username: ${{ secrets.AWS_ACCESS_KEY_ID }}
           password: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      
-      # Debug purpose
-      - name: Debug artifact layout
-        run: |
-          echo "===== ARTIFACT TREE ====="
-          find artifacts -type f | sort
 
       - name: Build (Local)
         if: inputs.pull-request == true

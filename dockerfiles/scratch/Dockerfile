@@ -3,23 +3,28 @@ FROM debian:12.6 AS otelcol
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG COLLECTOR_BIN=otelcol-sumo
+ARG CONFIG_BIN=otelcol-config
 
 RUN echo "I am running on ${BUILDPLATFORM}, building for ${TARGETPLATFORM}"
 
 COPY artifacts/$TARGETPLATFORM/$COLLECTOR_BIN /otelcol-sumo
+COPY artifacts/$TARGETPLATFORM/$CONFIG_BIN /otelcol-config
 
 # This shouldn't be necessary but sometimes we end up with execution bit not set.
 # ref: https://github.com/open-telemetry/opentelemetry-collector/issues/1317
 RUN chmod 755 /otelcol-sumo
+RUN chmod 755 /otelcol-config
 
 # NOTE: otelcol-sumo must be statically compiled
 # hadolint ignore=DL4006,SC2046
 RUN tar czhf otelcol.tar.gz /otelcol-sumo $(ldd /otelcol-sumo | grep -oP '\/.*? ')
+RUN tar czhf otelcolconfig.tar.gz /otelcol-config $(ldd /otelcol-config | grep -oP '\/.*? ')
 
 # extract package to /output so it can be taken as base for scratch image
 # we do not copy archive into scratch image, as it doesn't have tar executable
 # however, we can copy full directory as root (/) to be base file structure for scratch image
 RUN mkdir /output && tar xf /otelcol.tar.gz --directory /output
+RUN mkdir /output && tar xf /otelcol-config.tar.gz --directory /output
 
 FROM alpine:3.20.2 AS certs
 
