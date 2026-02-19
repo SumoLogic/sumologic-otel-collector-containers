@@ -18,7 +18,7 @@ RUN chmod 755 /otelcol-config
 # NOTE: otelcol-sumo must be statically compiled
 # hadolint ignore=DL4006,SC2046
 RUN tar czhf otelcol.tar.gz /otelcol-sumo $(ldd /otelcol-sumo | grep -oP '\/.*? ')
-RUN tar czhf otelcolconfig.tar.gz /otelcol-config $(ldd /otelcol-config | grep -oP '\/.*? ')
+RUN tar czhf otelcol-config.tar.gz /otelcol-config $(ldd /otelcol-config | grep -oP '\/.*? ')
 
 # extract package to /output so it can be taken as base for scratch image
 # we do not copy archive into scratch image, as it doesn't have tar executable
