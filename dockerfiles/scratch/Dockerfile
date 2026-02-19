@@ -27,6 +27,10 @@ RUN mkdir -p /output \
     && tar xf /otelcol.tar.gz --directory /output \
     && tar xf /otelcol-config.tar.gz --directory /output
 
+RUN microdnf update -y \
+    && microdnf install -y curl \
+    && microdnf clean all
+
 
 FROM alpine:3.20.2 AS certs
 
@@ -56,15 +60,37 @@ RUN mkdir /output && tar xf /journalctl.tar.gz --directory /output
 FROM scratch
 ARG BUILD_TAG=latest
 ENV TAG=$BUILD_TAG
-ARG USER_UID=10001
-USER ${USER_UID}
 ENV HOME=/etc/otel/
+ENV REMOTELY_MANAGED=false
 
 # copy journalctl and it's dependencies as base structure
 COPY --from=systemd /output/ /
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=otelcol /output/ /
 COPY --from=directories --chown=${USER_UID}:${USER_UID} /etc/otel/ /etc/otel/
+COPY /output/otelcol-config /usr/local/bin/
 
-ENTRYPOINT ["/otelcol-sumo"]
-CMD ["--config", "/etc/otel/config.yaml"]
+
+RUN mkdir -p /var/cache/otelcol-sumo /etc/otel && \
+    chmod 775 /var/cache/otelcol-sumo /etc/otel
+RUN mkdir -p $HOME \
+    && curl -sLo $HOME/install.sh \
+       https://raw.githubusercontent.com/SumoLogic/sumologic-otel-collector-packaging/main/install-script/install.sh \
+    && chmod +x $HOME/install.sh
+
+ENTRYPOINT ["bash", "-c", "\
+set -e; \
+\
+echo 'Running install.sh as root'; \
+/etc/otel/install.sh --config-only \"$@\"; \
+\
+# Use REMOTELY_MANAGED env instead of --remote argument \
+if [ \"$REMOTELY_MANAGED\" = 'true' ]; then \
+    echo 'Starting collector with remote config'; \
+    exec /otelcol-sumo --remote-config opamp:/etc/otelcol-sumo/sumologic-remote.yaml; \
+else \
+    echo 'Starting collector with local config'; \
+    exec /otelcol-sumo --config /etc/otel/config.yaml; \
+fi \
+", "--"]
+    
