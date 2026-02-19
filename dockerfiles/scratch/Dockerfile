@@ -67,11 +67,11 @@ ENV REMOTELY_MANAGED=false
 # copy journalctl and it's dependencies as base structure
 COPY --from=systemd /output/ /
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-COPY --from=otelcol /output/ /
+COPY --from=otelcol /output/otelcol-sumo /
+COPY --from=otelcol /output/otelcol-config /usr/local/bin/
 COPY --from=directories /etc/otel/ /etc/otel/
 COPY --from=directories /var/cache/otelcol-sumo/ /var/cache/otelcol-sumo/
 COPY --from=directories /script/ /etc/otel/
-COPY /otelcol-config /usr/local/bin/
 
 ENTRYPOINT ["bash", "-c", "\
 set -e; \
