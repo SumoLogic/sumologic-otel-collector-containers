@@ -64,7 +64,7 @@ ENV TAG=$BUILD_TAG
 ENV HOME=/etc/otel/
 ENV REMOTELY_MANAGED=false
 
-RUN apk add --no-cache bash coreutils
+RUN apk add --no-cache bash curl coreutils
 
 # copy journalctl and it's dependencies as base structure
 COPY --from=systemd /output/ /
