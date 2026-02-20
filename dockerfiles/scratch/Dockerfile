@@ -64,6 +64,8 @@ ENV TAG=$BUILD_TAG
 ENV HOME=/etc/otel/
 ENV REMOTELY_MANAGED=false
 
+RUN apk add --no-cache bash
+
 # copy journalctl and it's dependencies as base structure
 COPY --from=systemd /output/ /
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
@@ -73,7 +75,7 @@ COPY --from=directories /etc/otel/ /etc/otel/
 COPY --from=directories /var/cache/otelcol-sumo/ /var/cache/otelcol-sumo/
 COPY --from=directories /script/ /etc/otel/
 
-ENTRYPOINT ["bash", "-c", "\
+ENTRYPOINT ["/bin/bash", "-c", "\
 set -e; \
 \
 echo 'Running install.sh as root'; \
