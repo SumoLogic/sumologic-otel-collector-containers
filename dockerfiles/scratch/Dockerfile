@@ -58,15 +58,13 @@ RUN tar czhf journalctl.tar.gz /bin/journalctl $(ldd /bin/journalctl | grep -oP 
 # however, we can copy full directory as root (/) to be base file structure for scratch image
 RUN mkdir /output && tar xf /journalctl.tar.gz --directory /output
 
-FROM scratch
+FROM alpine:3.20.2
 ARG BUILD_TAG=latest
 ENV TAG=$BUILD_TAG
 ENV HOME=/etc/otel/
 ENV REMOTELY_MANAGED=false
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends bash && \
-    rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache bash
 
 # copy journalctl and it's dependencies as base structure
 COPY --from=systemd /output/ /
