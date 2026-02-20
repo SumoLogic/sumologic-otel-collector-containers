@@ -64,7 +64,9 @@ ENV TAG=$BUILD_TAG
 ENV HOME=/etc/otel/
 ENV REMOTELY_MANAGED=false
 
-RUN apk add --no-cache bash
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends bash && \
+    rm -rf /var/lib/apt/lists/*
 
 # copy journalctl and it's dependencies as base structure
 COPY --from=systemd /output/ /
