@@ -30,11 +30,10 @@ RUN mkdir -p /output \
 FROM alpine:3.20.2 AS certs
 
 # hadolint ignore=DL3018
-RUN apk add --no-cache ca-certificates
+RUN apk add --no-cache curl bash coreutils ca-certificates
 
 FROM alpine:3.20.2 AS directories
 RUN mkdir -p /var/cache/otelcol-sumo /etc/otel
-RUN apk add --no-cache curl
 RUN mkdir -p /script \
     && curl -sLo /script/install.sh \
        https://raw.githubusercontent.com/SumoLogic/sumologic-otel-collector-packaging/main/install-script/install.sh \
@@ -64,7 +63,7 @@ ENV TAG=$BUILD_TAG
 ENV HOME=/etc/otel/
 ENV REMOTELY_MANAGED=false
 
-RUN apk add --no-cache bash
+RUN apk add --no-cache bash coreutils
 
 # copy journalctl and it's dependencies as base structure
 COPY --from=systemd /output/ /
