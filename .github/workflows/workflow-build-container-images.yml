@@ -74,6 +74,12 @@ jobs:
           - product: standard
             os: linux
             arch: arm64
+          - product: alpine
+            os: linux
+            arch: amd64
+          - product: alpine
+            os: linux
+            arch: arm64
           - product: standard
             target: windows-ltsc2022
             os: windows

@@ -7,7 +7,8 @@ group "default" {
     "standard",
     "standard-fips",
     "ubi",
-    "ubi-fips"
+    "ubi-fips",
+    "alpine"
   ]
 }
 
@@ -41,6 +42,11 @@ target "_common-standard" {
   dockerfile = "./dockerfiles/scratch/Dockerfile"
 }
 
+target "_common-alpine" {
+  inherits = ["_common"]
+  dockerfile = "./dockerfiles/alpine/Dockerfile"
+}
+
 target "_common-ubi" {
   inherits = ["_common"]
   dockerfile = "./dockerfiles/ubi/Dockerfile"
@@ -66,6 +72,10 @@ target "standard" {
 
 target "standard-fips" {
   inherits = ["_common-standard", "_common-fips"]
+}
+
+target "alpine" {
+  inherits = ["_common-alpine"]
 }
 
 target "ubi" {
