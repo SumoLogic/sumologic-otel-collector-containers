@@ -67,13 +67,10 @@ defaults:
 
 jobs:
   build:
+    # product/target/os/arch
     name: >
       ${{ inputs.fips == true && 'Build FIPS' || 'Build' }} -
-      ${{
-      inputs.os != 'windows' && format('{0}/{1}', inputs.os, inputs.arch)
-      ||
-      format('{0}/{1}', inputs.target, inputs.arch)
-      }}
+      ${{ format('{0}/{1}/{2}/{3}', inputs.product, inputs.target, inputs.os, inputs.arch) }}
     runs-on: ${{ inputs.runs-on }}
     steps:
       - uses: actions/checkout@v6

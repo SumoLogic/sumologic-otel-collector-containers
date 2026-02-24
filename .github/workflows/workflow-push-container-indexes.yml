@@ -51,6 +51,15 @@ jobs:
               "${{ inputs.git-ref }}-fips",
               "${{ inputs.version }}-fips"
               ]
+          - target: alpine
+            tags: >
+              [
+              "${{ github.run_id }}-alpine",
+              "latest-alpine",
+              "${{ github.sha }}-alpine",
+              "${{ inputs.git-ref }}-alpine",
+              "${{ inputs.version }}-alpine"
+              ]
           - target: ubi
             tags: >
               [
