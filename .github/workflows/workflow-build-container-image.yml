@@ -70,15 +70,7 @@ jobs:
     # product/target/os/arch
     name: >
       ${{ inputs.fips == true && 'Build FIPS' || 'Build' }} -
-      ${{ 
-        join(
-          filter(
-            fromJSON('["' + inputs.product + '","' + inputs.os + '","' + inputs.arch + '","' + inputs.target + '"]'),
-            v -> v != '' && v != null
-          ),
-          '/'
-        ) 
-      }}
+      ${{ join([inputs.product, inputs.os, inputs.arch, inputs.target], '/') }}
     runs-on: ${{ inputs.runs-on }}
     steps:
       - uses: actions/checkout@v6
