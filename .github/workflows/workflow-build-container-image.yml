@@ -70,7 +70,17 @@ jobs:
     # product/target/os/arch
     name: >
       ${{ inputs.fips == true && 'Build FIPS' || 'Build' }} -
-      ${{ join([inputs.product, inputs.os, inputs.arch, inputs.target], '/') }}
+      ${{ 
+        format(
+          '{0}/{1}/{2}{3}',
+          inputs.product,
+          inputs.os,
+          inputs.arch,
+          inputs.target && inputs.target != '' && inputs.target != null
+            && format('/{0}', inputs.target)
+            || ''
+        ) 
+      }}
     runs-on: ${{ inputs.runs-on }}
     steps:
       - uses: actions/checkout@v6
