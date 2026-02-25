@@ -8,7 +8,8 @@ group "default" {
     "standard-fips",
     "ubi",
     "ubi-fips",
-    "alpine"
+    "alpine",
+    "alpine-fips"
   ]
 }
 
@@ -76,6 +77,10 @@ target "standard-fips" {
 
 target "alpine" {
   inherits = ["_common-alpine"]
+}
+
+target "alpine-fips" {
+  inherits = ["_common-alpine", "_common-fips"]
 }
 
 target "ubi" {

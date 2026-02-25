@@ -481,11 +481,13 @@ promote-images-ci-to-rc:
 	@$(MAKE) promote-ecr-image-ci-to-rc
 	@$(MAKE) promote-ecr-image-ci-to-rc TAG_SUFFIX="-fips"
 	@$(MAKE) promote-ecr-image-ci-to-rc TAG_SUFFIX="-alpine"
+	@$(MAKE) promote-ecr-image-ci-to-rc TAG_SUFFIX="-alpine-fips"
 	@$(MAKE) promote-ecr-image-ci-to-rc TAG_SUFFIX="-ubi"
 	@$(MAKE) promote-ecr-image-ci-to-rc TAG_SUFFIX="-ubi-fips"
 	@$(MAKE) promote-dh-image-ci-to-rc
 	@$(MAKE) promote-dh-image-ci-to-rc TAG_SUFFIX="-fips"
 	@$(MAKE) promote-dh-image-ci-to-rc TAG_SUFFIX="-alpine"
+	@$(MAKE) promote-dh-image-ci-to-rc TAG_SUFFIX="-alpine-fips"
 	@$(MAKE) promote-dh-image-ci-to-rc TAG_SUFFIX="-ubi"
 	@$(MAKE) promote-dh-image-ci-to-rc TAG_SUFFIX="-ubi-fips"
 
@@ -497,11 +499,13 @@ promote-images-rc-to-stable:
 	@$(MAKE) promote-ecr-image-rc-to-stable
 	@$(MAKE) promote-ecr-image-rc-to-stable TAG_SUFFIX="-fips"
 	@$(MAKE) promote-ecr-image-rc-to-stable TAG_SUFFIX="-alpine"
+	@$(MAKE) promote-ecr-image-rc-to-stable TAG_SUFFIX="-alpine-fips"
 	@$(MAKE) promote-ecr-image-rc-to-stable TAG_SUFFIX="-ubi"
 	@$(MAKE) promote-ecr-image-rc-to-stable TAG_SUFFIX="-ubi-fips"
 	@$(MAKE) promote-dh-image-rc-to-stable
 	@$(MAKE) promote-dh-image-rc-to-stable TAG_SUFFIX="-fips"
 	@$(MAKE) promote-dh-image-rc-to-stable TAG_SUFFIX="-alpine"
+	@$(MAKE) promote-dh-image-rc-to-stable TAG_SUFFIX="-alpine-fips"
 	@$(MAKE) promote-dh-image-rc-to-stable TAG_SUFFIX="-ubi"
 	@$(MAKE) promote-dh-image-rc-to-stable TAG_SUFFIX="-ubi-fips"
 
@@ -512,11 +516,13 @@ promote-images-ci-to-test:
 	@$(MAKE) promote-ecr-image-ci-to-test
 	@$(MAKE) promote-ecr-image-ci-to-test TAG_SUFFIX="-fips"
 	@$(MAKE) promote-ecr-image-ci-to-test TAG_SUFFIX="-alpine"
+	@$(MAKE) promote-ecr-image-ci-to-test TAG_SUFFIX="-alpine-fips"
 	@$(MAKE) promote-ecr-image-ci-to-test TAG_SUFFIX="-ubi"
 	@$(MAKE) promote-ecr-image-ci-to-test TAG_SUFFIX="-ubi-fips"
 	@$(MAKE) promote-dh-image-ci-to-test
 	@$(MAKE) promote-dh-image-ci-to-test TAG_SUFFIX="-fips"
 	@$(MAKE) promote-dh-image-ci-to-test TAG_SUFFIX="-alpine"
+	@$(MAKE) promote-dh-image-ci-to-test TAG_SUFFIX="-alpine-fips"
 	@$(MAKE) promote-dh-image-ci-to-test TAG_SUFFIX="-ubi"
 	@$(MAKE) promote-dh-image-ci-to-test TAG_SUFFIX="-ubi-fips"
 
@@ -525,11 +531,13 @@ create-tags-rc:
 	@$(MAKE) create-ecr-tags-rc
 	@$(MAKE) create-ecr-tags-rc TAG_SUFFIX="-fips"
 	@$(MAKE) create-ecr-tags-rc TAG_SUFFIX="-alpine"
+	@$(MAKE) create-ecr-tags-rc TAG_SUFFIX="-alpine-fips"
 	@$(MAKE) create-ecr-tags-rc TAG_SUFFIX="-ubi"
 	@$(MAKE) create-ecr-tags-rc TAG_SUFFIX="-ubi-fips"
 	@$(MAKE) create-dh-tags-rc
 	@$(MAKE) create-dh-tags-rc TAG_SUFFIX="-fips"
 	@$(MAKE) create-dh-tags-rc TAG_SUFFIX="-alpine"
+	@$(MAKE) create-dh-tags-rc TAG_SUFFIX="-alpine-fips"
 	@$(MAKE) create-dh-tags-rc TAG_SUFFIX="-ubi"
 	@$(MAKE) create-dh-tags-rc TAG_SUFFIX="-ubi-fips"
 
@@ -538,11 +546,13 @@ create-tags-stable:
 	@$(MAKE) create-ecr-tags-stable
 	@$(MAKE) create-ecr-tags-stable TAG_SUFFIX="-fips"
 	@$(MAKE) create-ecr-tags-stable TAG_SUFFIX="-alpine"
+	@$(MAKE) create-ecr-tags-stable TAG_SUFFIX="-alpine-fips"
 	@$(MAKE) create-ecr-tags-stable TAG_SUFFIX="-ubi"
 	@$(MAKE) create-ecr-tags-stable TAG_SUFFIX="-ubi-fips"
 	@$(MAKE) create-dh-tags-stable
 	@$(MAKE) create-dh-tags-stable TAG_SUFFIX="-fips"
 	@$(MAKE) create-dh-tags-stable TAG_SUFFIX="-alpine"
+	@$(MAKE) create-dh-tags-stable TAG_SUFFIX="-alpine-fips"
 	@$(MAKE) create-dh-tags-stable TAG_SUFFIX="-ubi"
 	@$(MAKE) create-dh-tags-stable TAG_SUFFIX="-ubi-fips"
 
@@ -551,11 +561,13 @@ create-tags-test:
 	@$(MAKE) create-ecr-tags-test
 	@$(MAKE) create-ecr-tags-test TAG_SUFFIX="-fips"
 	@$(MAKE) create-ecr-tags-test TAG_SUFFIX="-alpine"
+	@$(MAKE) create-ecr-tags-test TAG_SUFFIX="-alpine-fips"
 	@$(MAKE) create-ecr-tags-test TAG_SUFFIX="-ubi"
 	@$(MAKE) create-ecr-tags-test TAG_SUFFIX="-ubi-fips"
 	@$(MAKE) create-dh-tags-test
 	@$(MAKE) create-dh-tags-test TAG_SUFFIX="-fips"
 	@$(MAKE) create-dh-tags-test TAG_SUFFIX="-alpine"
+	@$(MAKE) create-dh-tags-test TAG_SUFFIX="-alpine-fips"
 	@$(MAKE) create-dh-tags-test TAG_SUFFIX="-ubi"
 	@$(MAKE) create-dh-tags-test TAG_SUFFIX="-ubi-fips"
 
@@ -578,3 +590,5 @@ print-ecr-image-platforms:
 	@$(MAKE) _print-image-platforms REGISTRY=$(ECR_REPO_CI) TAG=latest-fips
 	@$(MAKE) _print-image-platforms REGISTRY=$(ECR_REPO_CI) TAG=latest-ubi
 	@$(MAKE) _print-image-platforms REGISTRY=$(ECR_REPO_CI) TAG=latest-ubi-fips
+	@$(MAKE) _print-image-platforms REGISTRY=$(ECR_REPO_CI) TAG=latest-alpine
+	@$(MAKE) _print-image-platforms REGISTRY=$(ECR_REPO_CI) TAG=latest-alpine-fips

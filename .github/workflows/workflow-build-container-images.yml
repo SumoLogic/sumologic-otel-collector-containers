@@ -117,3 +117,12 @@ jobs:
             fips: true
             os: linux
             arch: arm64
+          # alpine-fips product
+          - product: alpine-fips
+            fips: true
+            os: linux
+            arch: amd64
+          - product: alpine-fips
+            fips: true
+            os: linux
+            arch: arm64
