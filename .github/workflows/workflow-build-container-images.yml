@@ -74,10 +74,10 @@ jobs:
           - product: standard
             os: linux
             arch: arm64
-          - product: alpine
+          - product: remote
             os: linux
             arch: amd64
-          - product: alpine
+          - product: remote
             os: linux
             arch: arm64
           - product: standard
@@ -117,12 +117,12 @@ jobs:
             fips: true
             os: linux
             arch: arm64
-          # alpine-fips product
-          - product: alpine-fips
+          # remote-fips product
+          - product: remote-fips
             fips: true
             os: linux
             arch: amd64
-          - product: alpine-fips
+          - product: remote-fips
             fips: true
             os: linux
             arch: arm64

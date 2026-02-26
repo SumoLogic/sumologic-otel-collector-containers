@@ -1,11 +1,9 @@
-# Build RedHat compliant image
 FROM alpine:3.20.2
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG COLLECTOR_BIN=otelcol-sumo
 ARG CONFIG_BIN=otelcol-config
 ARG USER_UID=10001
-ENV REMOTE_COLLECTOR=false
 
 ENV SUMMARY="Alpine based sumologic-otel-collector" \
     DESCRIPTION="Sumo Logic Distribution for OpenTelemetry Collector is a Sumo Logic-supported distribution of the OpenTelemetry Collector. It is a single agent to send logs, metrics and traces to Sumo Logic."
@@ -75,11 +73,6 @@ set -e; \
 echo 'Running install.sh'; \
 /etc/otel/install.sh --config-only \"$@\"; \
 \
-if [ \"$REMOTE_COLLECTOR\" = 'true' ]; then \
-    echo 'Starting collector with remote config'; \
-    exec /otelcol-sumo --remote-config opamp:/etc/otelcol-sumo/sumologic-remote.yaml; \
-else \
-    echo 'Starting collector with local config'; \
-    exec /otelcol-sumo --config /etc/otel/config.yaml; \
-fi \
+echo 'Starting collector with remote config'; \
+exec /otelcol-sumo --remote-config opamp:/etc/otelcol-sumo/sumologic-remote.yaml; \
 ", "--"]

@@ -51,23 +51,23 @@ jobs:
               "${{ inputs.git-ref }}-fips",
               "${{ inputs.version }}-fips"
               ]
-          - target: alpine
+          - target: remote
             tags: >
               [
-              "${{ github.run_id }}-alpine",
-              "latest-alpine",
-              "${{ github.sha }}-alpine",
-              "${{ inputs.git-ref }}-alpine",
-              "${{ inputs.version }}-alpine"
+              "${{ github.run_id }}-remote",
+              "latest-remote",
+              "${{ github.sha }}-remote",
+              "${{ inputs.git-ref }}-remote",
+              "${{ inputs.version }}-remote"
               ]
-          - target: alpine-fips
+          - target: remote-fips
             tags: >
               [
-              "${{ github.run_id }}-alpine-fips",
-              "latest-alpine-fips",
-              "${{ github.sha }}-alpine-fips",
-              "${{ inputs.git-ref }}-alpine-fips",
-              "${{ inputs.version }}-alpine-fips"
+              "${{ github.run_id }}-remote-fips",
+              "latest-remote-fips",
+              "${{ github.sha }}-remote-fips",
+              "${{ inputs.git-ref }}-remote-fips",
+              "${{ inputs.version }}-remote-fips"
               ]
           - target: ubi
             tags: >
