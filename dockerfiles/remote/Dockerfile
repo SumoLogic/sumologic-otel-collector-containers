@@ -63,7 +63,7 @@ ENV HOME=/etc/otel
 
 RUN mkdir -p $HOME \
     && curl -sLo $HOME/install.sh \
-       https://raw.githubusercontent.com/SumoLogic/sumologic-otel-collector-packaging/add-creds-dir/install-script/install.sh \
+       https://raw.githubusercontent.com/SumoLogic/sumologic-otel-collector-packaging/main/install-script/install.sh \
     && chmod +x $HOME/install.sh
 
 # ---- INLINE ENTRYPOINT ----
