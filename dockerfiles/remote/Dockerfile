@@ -70,7 +70,7 @@ ENTRYPOINT ["/bin/bash", "-c", "\
 set -e; \
 \
 echo 'Running install.sh'; \
-/etc/otel/install.sh --config-only \"$@\"; \
+/etc/otel/install.sh --config-only --remotely-managed \"$@\"; \
 \
 echo 'Starting collector with remote config'; \
 exec /otelcol-sumo --remote-config opamp:/etc/otelcol-sumo/sumologic-remote.yaml; \
