@@ -1,4 +1,4 @@
-FROM alpine:3.20.2
+FROM alpine:3.23.3
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG COLLECTOR_BIN=otelcol-sumo
@@ -44,7 +44,6 @@ RUN mkdir -p \
         /var/lib/otelcol-sumo/file_storage && \
     chmod 770 \
         /etc/otelcol-sumo \
-        /var/cache/otelcol-sumo \
         /etc/otelcol-sumo/conf.d \
         /etc/otelcol-sumo/env \
         /etc/otelcol-sumo/opamp.d \
