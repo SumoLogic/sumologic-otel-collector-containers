@@ -67,12 +67,19 @@ defaults:
 
 jobs:
   build:
+    # product/target/os/arch
     name: >
       ${{ inputs.fips == true && 'Build FIPS' || 'Build' }} -
-      ${{
-      inputs.os != 'windows' && format('{0}/{1}', inputs.os, inputs.arch)
-      ||
-      format('{0}/{1}', inputs.target, inputs.arch)
+      ${{ 
+        format(
+          '{0}/{1}/{2}{3}',
+          inputs.product,
+          inputs.os,
+          inputs.arch,
+          inputs.target && inputs.target != '' && inputs.target != null
+            && format('/{0}', inputs.target)
+            || ''
+        ) 
       }}
     runs-on: ${{ inputs.runs-on }}
     steps:
@@ -85,68 +92,32 @@ jobs:
           workflow_id="${{ inputs.workflow-id }}"
           echo "https://github.com/${org}/${repo}/actions/runs/${workflow_id}"
 
-      - name: Set binary name
-        uses: ./.github/actions/determine-binary-name
-        id: binary-name
+      - name: Setup otelcol-sumo artifact
+        id: artifact-otelcol-sumo
+        uses: ./.github/actions/setup-collector-artifact
         with:
           fips: ${{ inputs.fips }}
-          name: otelcol-sumo
-          platform: ${{ inputs.os }}_${{ inputs.arch }}
-
-      - name: Output platform information
-        id: platform
-        run: |
-          os="${{ inputs.os }}"
-          os_version="${{ inputs.os-version }}"
-          arch="${{ inputs.arch }}"
-          product="${{ inputs.product }}"
-          target="${{ inputs.target }}"
-
-          artifacts_path="artifacts/${os}/${arch}"
-
-          manifest="manifest_${product}_${os}_${arch}"
-          if [[ "${target}" != "" ]]; then
-            manifest+="_${target}"
-          fi
-
-          name_with_os_version="${os}"
-          if [[ "${os_version}" != "" ]]; then
-            name_with_os_version+="(${os_version})"
-          fi
-          name_with_os_version+="/${arch}"
-
-          {
-          echo "name=${os}"
-          echo "name-with-os-version=${name_with_os_version}"
-          echo "artifacts-path=${artifacts_path}"
-          echo "manifest-name=${manifest}"
-          } >> "$GITHUB_OUTPUT"
-
-      - name: Download otelcol-sumo artifact from workflow
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131
+          arch: ${{ inputs.arch }}
+          os: ${{ inputs.os }}
+          os-version: ${{ inputs.os-version }}
+          product: ${{ inputs.product }}
+          target: ${{ inputs.target }}
+          workflow-id: ${{ inputs.workflow-id }}
+          artifact-name: otelcol-sumo
+      
+      - name: Setup otelcol-config artifact
+        id: artifact-otelcol-config
+        if: inputs.os != 'windows'
+        uses: ./.github/actions/setup-collector-artifact
         with:
-          name: ${{ steps.binary-name.outputs.name-with-platform }}
-          path: ${{ steps.platform.outputs.artifacts-path }}
-          repository: sumologic/sumologic-otel-collector
-          run-id: ${{ inputs.workflow-id }}
-          github-token: ${{ github.token }}
-
-      - name: Rename otelcol-sumo artifact
-        run: |
-          artifacts="${{ steps.platform.outputs.artifacts-path }}"
-          old="${{ steps.binary-name.outputs.name-with-platform }}"
-          new="${{ steps.binary-name.outputs.name }}"
-
-          mv "${artifacts}/${old}" "${artifacts}/${new}"
-
-      - name: Verify that artifact is a regular file
-        run: |
-          artifacts="${{ steps.platform.outputs.artifacts-path }}"
-          artifact="${artifacts}/${{ steps.binary-name.outputs.name }}"
-          if [ ! -f "${artifact}" ]; then
-          echo "Artifact is not a regular file: ${artifact}"
-          exit 1
-          fi
+          fips: ${{ inputs.fips }}
+          arch: ${{ inputs.arch }}
+          os: ${{ inputs.os }}
+          os-version: ${{ inputs.os-version }}
+          product: ${{ inputs.product }}
+          target: ${{ inputs.target }}
+          workflow-id: ${{ inputs.workflow-id }}
+          artifact-name: otelcol-config
 
       - name: Set image metadata
         id: meta
@@ -222,7 +193,7 @@ jobs:
             ./docker-bake.ci-override.hcl
             cwd://${{ steps.meta.outputs.bake-file }}
           set: |
-            *.platform=${{ steps.platform.outputs.name-with-os-version }}
+            *.platform=${{ steps.artifact-otelcol-sumo.outputs.name-with-os-version }}
             *.tags=
 
       - name: Build and push (ECR)
@@ -239,7 +210,7 @@ jobs:
             ./docker-bake.ci-override.hcl
             cwd://${{ steps.meta.outputs.bake-file }}
           set: |
-            *.platform=${{ steps.platform.outputs.name-with-os-version }}
+            *.platform=${{ steps.artifact-otelcol-sumo.outputs.name-with-os-version }}
             *.tags=
 
       - name: Print & fix metadata
@@ -262,15 +233,15 @@ jobs:
         if: steps.fix-metadata.conclusion == 'success'
         id: manifest
         run: |
-          name="${{ steps.platform.outputs.manifest-name }}"
+          name="${{ steps.artifact-otelcol-sumo.outputs.manifest-name }}"
           target="${{ inputs.target || inputs.product }}"
           jq -c ".[\"$target\"]" metadata-ecr.json | tee "${name}-ecr.json"
 
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         if: steps.manifest.conclusion == 'success'
         with:
-          name: ${{ steps.platform.outputs.manifest-name }}-ecr
-          path: ${{ steps.platform.outputs.manifest-name }}-ecr.json
+          name: ${{ steps.artifact-otelcol-sumo.outputs.manifest-name }}-ecr
+          path: ${{ steps.artifact-otelcol-sumo.outputs.manifest-name }}-ecr.json
           if-no-files-found: error
 
       # NOTE: There doesn't appear to be a simple way to run post hooks in

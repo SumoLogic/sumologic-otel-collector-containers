@@ -7,7 +7,9 @@ group "default" {
     "standard",
     "standard-fips",
     "ubi",
-    "ubi-fips"
+    "ubi-fips",
+    "remote",
+    "remote-fips"
   ]
 }
 
@@ -32,12 +34,18 @@ target "_common" {
 target "_common-fips" {
   args = {
     COLLECTOR_BIN = "otelcol-sumo-fips"
+    CONFIG_BIN    = "otelcol-config-fips"
   }
 }
 
 target "_common-standard" {
   inherits = ["_common"]
   dockerfile = "./dockerfiles/scratch/Dockerfile"
+}
+
+target "_common-remote" {
+  inherits = ["_common"]
+  dockerfile = "./dockerfiles/remote/Dockerfile"
 }
 
 target "_common-ubi" {
@@ -65,6 +73,14 @@ target "standard" {
 
 target "standard-fips" {
   inherits = ["_common-standard", "_common-fips"]
+}
+
+target "remote" {
+  inherits = ["_common-remote"]
+}
+
+target "remote-fips" {
+  inherits = ["_common-remote", "_common-fips"]
 }
 
 target "ubi" {

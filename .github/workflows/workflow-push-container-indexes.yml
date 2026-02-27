@@ -51,6 +51,24 @@ jobs:
               "${{ inputs.git-ref }}-fips",
               "${{ inputs.version }}-fips"
               ]
+          - target: remote
+            tags: >
+              [
+              "${{ github.run_id }}-remote",
+              "latest-remote",
+              "${{ github.sha }}-remote",
+              "${{ inputs.git-ref }}-remote",
+              "${{ inputs.version }}-remote"
+              ]
+          - target: remote-fips
+            tags: >
+              [
+              "${{ github.run_id }}-remote-fips",
+              "latest-remote-fips",
+              "${{ github.sha }}-remote-fips",
+              "${{ inputs.git-ref }}-remote-fips",
+              "${{ inputs.version }}-remote-fips"
+              ]
           - target: ubi
             tags: >
               [

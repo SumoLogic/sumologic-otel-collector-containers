@@ -74,6 +74,12 @@ jobs:
           - product: standard
             os: linux
             arch: arm64
+          - product: remote
+            os: linux
+            arch: amd64
+          - product: remote
+            os: linux
+            arch: arm64
           - product: standard
             target: windows-ltsc2022
             os: windows
@@ -108,6 +114,15 @@ jobs:
             os: linux
             arch: amd64
           - product: ubi-fips
+            fips: true
+            os: linux
+            arch: arm64
+          # remote-fips product
+          - product: remote-fips
+            fips: true
+            os: linux
+            arch: amd64
+          - product: remote-fips
             fips: true
             os: linux
             arch: arm64

@@ -1,0 +1,113 @@
+name: Setup the artifacts for the sumo-otelcol-image
+
+description: |
+  Identifies the artifact name and downloads the artifacts from the referenced
+  workflow and puts the artifacts in the expected image path
+
+inputs:
+  fips:
+    description: Build container image using FIPS binary.
+    required: false
+  arch:
+    description: The CPU architecture to build for.
+    required: true
+  os:
+    description: The operating system to build for.
+    required: true
+  os-version:
+    description: The operating system version to build for.
+    required: false
+  artifact-name:
+    description: The name of the artifact
+    required: true
+  product:
+    description: |
+      The product name to build. This allows different bake targets to end
+      up in the same multi-platform image.
+    required: true
+  target:
+    description: |
+      The bake target to build. The product name will be used as the target
+      when target is not set.
+    required: false
+  workflow-id:
+    description: |
+      The ID of the GitHub Actions workflow in sumologic-otel-collector to
+      fetch artifacts from.
+    required: true
+
+outputs:
+  name-with-os-version:
+    value: ${{ steps.platform.outputs.name-with-os-version }}
+  manifest-name:
+    value: ${{ steps.platform.outputs.manifest-name }}
+
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set binary name
+      uses: ./.github/actions/determine-binary-name
+      id: binary-name
+      with:
+        fips: ${{ inputs.fips }}
+        name: ${{ inputs.artifact-name }}
+        platform: ${{ inputs.os }}_${{ inputs.arch }}
+ 
+    - name: Output platform information
+      id: platform
+      shell: bash
+      run: |
+        os="${{ inputs.os }}"
+        os_version="${{ inputs.os-version }}"
+        arch="${{ inputs.arch }}"
+        product="${{ inputs.product }}"
+        target="${{ inputs.target }}"
+
+        artifacts_path="artifacts/${os}/${arch}"
+
+        manifest="manifest_${product}_${os}_${arch}"
+        if [[ "${target}" != "" ]]; then
+          manifest+="_${target}"
+        fi
+
+        name_with_os_version="${os}"
+        if [[ "${os_version}" != "" ]]; then
+          name_with_os_version+="(${os_version})"
+        fi
+        name_with_os_version+="/${arch}"
+
+        {
+        echo "name=${os}"
+        echo "name-with-os-version=${name_with_os_version}"
+        echo "artifacts-path=${artifacts_path}"
+        echo "manifest-name=${manifest}"
+        } >> "$GITHUB_OUTPUT"
+
+    - name: Download artifact from workflow
+      uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131
+      with:
+        name: ${{ steps.binary-name.outputs.name-with-platform }}
+        path: ${{ steps.platform.outputs.artifacts-path }}
+        repository: sumologic/sumologic-otel-collector
+        run-id: ${{ inputs.workflow-id }}
+        github-token: ${{ github.token }}
+
+    - name: Rename artifact
+      shell: bash
+      run: |
+        artifacts="${{ steps.platform.outputs.artifacts-path }}"
+        old="${{ steps.binary-name.outputs.name-with-platform }}"
+        new="${{ steps.binary-name.outputs.name }}"
+
+        mv "${artifacts}/${old}" "${artifacts}/${new}"
+
+    - name: Verify that artifact is a regular file
+      shell: bash
+      run: |
+        artifacts="${{ steps.platform.outputs.artifacts-path }}"
+        artifact="${artifacts}/${{ steps.binary-name.outputs.name }}"
+        if [ ! -f "${artifact}" ]; then
+        echo "Artifact is not a regular file: ${artifact}"
+        exit 1
+        fi
