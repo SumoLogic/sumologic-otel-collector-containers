@@ -73,7 +73,7 @@ jobs:
         run: echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
       - name: Login to ECR (Private)
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: 663229565520.dkr.ecr.us-east-1.amazonaws.com
           username: ${{ secrets.SUMOLOGIC_OTEL_CICD_ACCESS_KEY_ID }}
@@ -81,14 +81,14 @@ jobs:
 
       - name: Login to ECR (Public)
         if: ${{ inputs.destination-channel == 'stable' }}
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: public.ecr.aws
           username: ${{ secrets.SUMOLOGIC_OTEL_CICD_ACCESS_KEY_ID }}
           password: ${{ secrets.SUMOLOGIC_OTEL_CICD_SECRET_ACCESS_KEY }}
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: docker.io
           username: ${{ secrets.DOCKERHUB_LOGIN }}
