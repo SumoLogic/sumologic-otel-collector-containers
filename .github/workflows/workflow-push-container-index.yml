@@ -41,7 +41,7 @@ jobs:
         run: echo ${{ steps.buildx.outputs.platforms }}
 
       - name: Login to ECR
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: 663229565520.dkr.ecr.us-east-1.amazonaws.com
           username: ${{ secrets.AWS_ACCESS_KEY_ID }}
