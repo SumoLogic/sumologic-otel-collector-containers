@@ -1,4 +1,6 @@
 name: Publish release
+permissions:
+  contents: write
 
 run-name: >
   ${{ format('Publish Release for Workflow: {0}', inputs.workflow-id) }}
