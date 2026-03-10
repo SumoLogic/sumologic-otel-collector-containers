@@ -183,7 +183,7 @@ jobs:
       - name: Build (Local)
         if: inputs.pull-request == true
         id: build-local
-        uses: docker/bake-action@v6
+        uses: docker/bake-action@v7
         with:
           source: .
           targets: ${{ inputs.target || inputs.product }}
@@ -199,7 +199,7 @@ jobs:
       - name: Build and push (ECR)
         if: inputs.pull-request == false
         id: build-ecr
-        uses: docker/bake-action@v6
+        uses: docker/bake-action@v7
         with:
           source: .
           targets: ${{ inputs.target || inputs.product }}
