@@ -71,6 +71,7 @@ jobs:
 
       - uses: ncipollo/release-action@v1
         with:
+          token: ${{ secrets.PAT }}
           name: v${{ needs.determine-run-info.outputs.otc-version }}
           commit: ${{ needs.determine-run-info.outputs.git-sha }}
           tag: v${{ needs.determine-run-info.outputs.otc-version }}
