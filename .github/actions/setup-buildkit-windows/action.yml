@@ -237,6 +237,7 @@ runs:
         $url = "${repo}/releases/download/v${version}/${file}"
 
         curl.exe -LO "${url}"
+        New-Item -ItemType Directory -Force -Path $pluginsPath | Out-Null
         mv $file ${pluginsPath}\docker-buildx.exe
 
         $end = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
