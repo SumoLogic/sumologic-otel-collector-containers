@@ -54,35 +54,35 @@ jobs:
           echo "${VERSION}" > otc-version.txt
 
       - name: Store build-number.txt as action artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: build-number.txt
           path: ./build-number.txt
           if-no-files-found: error
 
       - name: Store otc-core-version.txt as action artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: otc-core-version.txt
           path: ./otc-core-version.txt
           if-no-files-found: error
 
       - name: Store otc-git-reference.txt as action artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: otc-git-reference.txt
           path: ./otc-git-reference.txt
           if-no-files-found: error
 
       - name: Store otc-sumo-version.txt as action artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: otc-sumo-version.txt
           path: ./otc-sumo-version.txt
           if-no-files-found: error
 
       - name: Store otc-version.txt as action artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: otc-version.txt
           path: ./otc-version.txt
