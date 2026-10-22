@@ -21,12 +21,12 @@ RUN tar czhf otelcol.tar.gz /otelcol-sumo $(ldd /otelcol-sumo | grep -oP '\/.*? 
 # however, we can copy full directory as root (/) to be base file structure for scratch image
 RUN mkdir /output && tar xf /otelcol.tar.gz --directory /output
 
-FROM alpine:3.20.2 AS certs
+FROM alpine:3.24.3 AS certs
 
 # hadolint ignore=DL3018
 RUN apk add --no-cache ca-certificates
 
-FROM alpine:3.20.2 AS directories
+FROM alpine:3.24.3 AS directories
 RUN mkdir /etc/otel/
 
 FROM debian:12.6 AS systemd
