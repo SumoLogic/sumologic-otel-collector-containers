@@ -7,3 +7,22 @@ updates:
 
     labels:
       - skip-changelog
+
+  - package-ecosystem: "docker"
+    directories:
+      - "/dockerfiles/scratch"
+      - "/dockerfiles/remote"
+      - "/dockerfiles/ubi"
+    schedule:
+      interval: "weekly"
+    # Major base OS upgrades (e.g. debian 12 -> 13) should be done deliberately, not as routine weekly bumps.
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      base-images:
+        patterns:
+          - "*"
+
+    labels:
+      - skip-changelog
