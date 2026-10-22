@@ -1,5 +1,5 @@
 # For FIPS binary, there are some debian runtime dependencies
-FROM debian:12.6 AS otelcol
+FROM debian:12.14 AS otelcol
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG COLLECTOR_BIN=otelcol-sumo
@@ -29,7 +29,7 @@ RUN apk add --no-cache ca-certificates
 FROM alpine:3.24.3 AS directories
 RUN mkdir /etc/otel/
 
-FROM debian:12.6 AS systemd
+FROM debian:12.14 AS systemd
 
 # hadolint ignore=DL3008
 RUN apt-get update && apt-get install -y --no-install-recommends \
